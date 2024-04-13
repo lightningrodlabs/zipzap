@@ -20,6 +20,7 @@ import { isWeContext, type WeClient } from '@lightningrodlabs/we-applet';
 import { HoloHashMap } from '@holochain-open-dev/utils/dist/holo-hash-map';
 import { getMyDna } from './util';
 import type { UnsubscribeFunction } from 'emittery';
+import { type Message, Stream, type Payload } from './stream';
 
 
 TimeAgo.addDefaultLocale(en)
@@ -84,36 +85,6 @@ export interface UIProps {
     tips: HoloHashMap<EntryHash,EntryHash>
 }
 
-export type Msg = {
-    created: number,
-    text: string
-}
-
-export type Payload = 
-    ({ type: 'Msg' } & Msg) |
-    ({type: 'Ack'} & number)
-
-
-export type Message = {
-    payload: Payload;
-    from: AgentPubKey;
-    received: Date;
-}
-
-export class Stream {
-    messages:Writable<Message[]> = writable([])
-    constructor(public id : string,
-    ) {
-
-    }
-    addMessage(message: Message) {
-        this.messages.update((messages)=>{
-            messages.push(message)
-            return messages
-        })
-    }
-
-}
 
 export class ZipZapStore {
     myAgentPubKeyB64: AgentPubKeyB64
@@ -138,27 +109,34 @@ export class ZipZapStore {
     unsub: Unsubscriber
     dnaHash: DnaHash
     streams: {[key: string]: Stream} = {}
+    lastSeen: Writable<HoloHashMap<AgentPubKey,number>> = writable(new HoloHashMap())
 
-    addMessageToStream(streamId: string, message: Message) {
-        if (isWeContext() && message.payload.type == "Msg") {
-            this.weClient.notifyFrame([
-                {
-                    title: `message from ${encodeHashToBase64(message.from)}`,
-                    body: message.payload.text,
-                    notification_type: "message",
-                    icon_src: undefined,
-                    urgency: "medium",
-                    timestamp: message.payload.created
-                }
-            ])
-        }
-        console.log("SSS", streamId, message)
+    async addMessageToStream(streamId: string, message: Message) {
+        this.lastSeen.update(l=>{
+            l.set(message.from,Date.now())
+            return l
+        })
         let stream = this.streams[streamId]
         if (! stream) {
             stream = new Stream(streamId)
             this.streams[streamId] = stream
         }
         stream.addMessage(message)
+        if (message.payload.type == "Msg") {
+            if (isWeContext()) {
+                this.weClient.notifyFrame([
+                    {
+                        title: `message from ${encodeHashToBase64(message.from)}`,
+                        body: message.payload.text,
+                        notification_type: "message",
+                        icon_src: undefined,
+                        urgency: "medium",
+                        timestamp: message.payload.created
+                    }
+                ])
+            }
+            await this.client.sendMessage(streamId, {type:"Ack", created:message.payload.created},[message.from])
+        }
     }
 
     constructor(
@@ -175,18 +153,23 @@ export class ZipZapStore {
           );
         this.client.onSignal((signal)=>{
             console.log("MSG",signal)
+            
             // @ts-ignore
             if (signal.type == "Message") {
-                const message: Message = {
-                    // @ts-ignore
-                    payload: JSON.parse(signal.content),
-                    // @ts-ignore
-                    from: signal.from,
-                    received: new Date
-                }
                 // @ts-ignore
-                this.addMessageToStream(signal.stream_id, message)
+                const from: AgentPubKey = signal.from
+                // @ts-ignore
+                const streamId = signal.stream_id
+                // @ts-ignore
+                const payload: Payload = JSON.parse(signal.content)
+                const message: Message = {
+                    payload,
+                    from,
+                    received: Date.now()
+                }
+                this.addMessageToStream(streamId, message)
             }
+
         })
 
         getMyDna(roleName, clientIn).then(res=>{

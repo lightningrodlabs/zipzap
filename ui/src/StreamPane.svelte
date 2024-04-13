@@ -5,8 +5,9 @@
     import { get } from 'svelte/store';    
     import SvgIcon from "./SvgIcon.svelte";
     import { isWeContext } from '@lightningrodlabs/we-applet';
-    import { Stream, type ZipZapStore } from "./store";
+    import type {  ZipZapStore } from "./store";
     import { encodeHashToBase64 } from '@holochain/client';
+  import { Stream } from './stream';
 
     const { getStore } :any = getContext('store');
     const store:ZipZapStore = getStore();
@@ -27,6 +28,9 @@
         // }
 	  });
     $:messages = store.streams[streamId].messages
+    $:acks = store.streams[streamId].acks
+    $:lastSeen = store.lastSeen
+
     let inputElement;
     let disabled
 
@@ -34,15 +38,21 @@
 <div class="person-feed">
     <div class="header">
         <Avatar size={16} agentPubKey={hash} placeholder={false} showNickname={true}/>
+        Last Seen: { $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}
     </div>
     <div class="stream">
       {#each $messages as msg}
+        {@const isMyMessage = encodeHashToBase64(msg.from) == store.myAgentPubKeyB64}
         <div class="msg"
-          class:my-msg={encodeHashToBase64(msg.from) == store.myAgentPubKeyB64}
+          class:my-msg={isMyMessage}
           >
           {#if msg.payload.type == "Msg"}
+            {@const ack = $acks[msg.payload.created]}
             {msg.payload.text}
-            <span class="msg-timestamp">{store.timeAgo.format(msg.received)}</span>
+            <span class="msg-timestamp">{new Date(msg.received).toLocaleTimeString()}</span>
+            {#if isMyMessage}
+              { ack && ack.get(hash)?"✓":""}
+            {/if}
           {/if}
         </div>
       {/each}
