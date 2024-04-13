@@ -1,0 +1,12 @@
+[package]
+edition = "2021"
+name = "zipzap_integrity"
+version = "0.0.2"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "zipzap_integrity"
+
+[dependencies]
+hdi = { workspace = true }
+serde = { workspace = true }

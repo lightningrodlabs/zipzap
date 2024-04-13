@@ -1,0 +1,25 @@
+---
+manifest_version: "1"
+name: zipzap
+
+integrity:
+  network_seed: ~
+  properties:
+    type: "ZipZap"
+  origin_time: 2023-11-03T00:00:00.0Z
+  zomes:
+    - name: zipzap_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/zipzap_integrity.wasm
+    - name: profiles_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/profiles_integrity.wasm
+
+coordinator:
+  zomes:
+    - name: zipzap
+      bundled: ../../../target/wasm32-unknown-unknown/release/zipzap.wasm
+      dependencies:
+        - name: profiles_integrity
+    - name: profiles
+      bundled: ../../../target/wasm32-unknown-unknown/release/profiles.wasm
+      dependencies:
+        - name: profiles_integrity

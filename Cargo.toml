@@ -1,0 +1,26 @@
+[profile.dev]
+opt-level = "z"
+
+[profile.release]
+opt-level = "z"
+
+[workspace]
+members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
+resolver = "2"
+
+[workspace.dependencies]
+hdi = "0.4.0-beta-dev.31"
+hdk = "0.3.0-beta-dev.35"
+serde = "1"
+
+[workspace.dependencies.zipzap]
+path = "dnas/zipzap/zomes/coordinator/zipzap"
+
+[workspace.dependencies.zipzap_integrity]
+path = "dnas/zipzap/zomes/integrity/zipzap"
+
+[workspace.dependencies.profiles]
+path = "dnas/zipzap/zomes/coordinator/profiles"
+
+[workspace.dependencies.profiles_integrity]
+path = "dnas/zipzap/zomes/integrity/profiles"
