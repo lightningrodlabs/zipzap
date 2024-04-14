@@ -27,7 +27,6 @@ export class Stream {
         this.messages = derived(this.store,s=>s.sort((a,b)=>a.received - b.received))
     }
     addMessage(message: Message) {
-        console.log("FISH", message)
         if (message.payload.type == "Ack") {
             this.acks.update((acks)=>{
                 let ack = acks[message.payload.created]

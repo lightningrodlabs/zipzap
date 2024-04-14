@@ -12,15 +12,13 @@
 
 <svelte:window on:keydown={handleKeydown}/>
 
-<sl-dialog label="ZipZap!: UI v0.4.2 for DNA v0.4.x" bind:this={dialog} width={600} >
+<sl-dialog label="ZipZap!: UI v0.1.0 for DNA v0.1.x" bind:this={dialog} width={600} >
     <div class="about">
-        <p>ZipZap! is a demonstration Holochain app built by the Holochain Foundation.</p>
+        <p>ZipZap! is a demonstration Holochain app built by the Lightningrod Labs  .</p>
         <p> <b>Developers:</b>
-            Check out this hApp's source-code <a href="https://github.com/holochain-apps/zipzap">in our github repo</a>.
-            This project's real-time syncronization is powered by <a href="https://github.com/holochain/syn">Syn</a>, 
-            a library that makes it really easy to build this kind of real-time collaboaration into Holochain apps.
+            Check out this hApp's source-code <a href="https://github.com/lightningrodlabs/zipzap">in our github repo</a>.
         </p>
-    <p class="small">Copyright © 2023-2024 Holochain Foundation.  This software is distributed under the MIT License</p>
+    <p class="small">Copyright © 2024 Lighningrod Labs & Holochain Foundation.  This software is distributed under the MIT License</p>
     </div>
 </sl-dialog>
 

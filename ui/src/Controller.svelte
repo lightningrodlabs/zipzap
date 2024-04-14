@@ -12,6 +12,9 @@
   import ThingItem from "./ThingItem.svelte";
   import type { WeClient } from "@lightningrodlabs/we-applet";
   import { encodeHashToBase64 } from "@holochain/client";
+  import type { AgentPubKey } from "@holochain/client";
+  import { HoloHashMap } from "@holochain-open-dev/utils";
+  import "@holochain-open-dev/profiles/dist/elements/agent-avatar.js";
 
   export let roleName = "";
   export let client: AppAgentClient;
@@ -35,6 +38,15 @@
   $: thingsList = store.thingsList
   $: allProfiles = store.profilesStore.allProfiles
   $: allPeople = $allProfiles.status=== "complete" ? Array.from($allProfiles.value.entries()) : []
+  let currentStream: AgentPubKey | undefined = undefined
+  let unseen: HoloHashMap<AgentPubKey,number> = new HoloHashMap()
+  $:lastSeen = store.lastSeen
+
+  const isActive = (lastSeen, hash) => {
+      const seen = lastSeen.get(hash)
+      if (!seen) return false
+      return Date.now()-seen < 30001
+    }
 
   let fileinput;
   const onFileSelected = (e) => {
@@ -57,16 +69,44 @@
   <div class="flex-scrollable-container">
     <div class="app">
       {#if store}
-        <Toolbar />
-
-        People:
-        {#each allPeople as [hash,profile]}
-          {@const hb64 = encodeHashToBase64(hash)}
-          {#if hb64 != myAgentPubKeyB64}
-            <StreamPane hash={hash} />
-          {/if}
+        <div class="main-pane">
+          <div class="people">
+            {#each allPeople as [hash,profile]}
+              {@const hb64 = encodeHashToBase64(hash)}
+              {@const selected = currentStream && hb64 == encodeHashToBase64(currentStream)}
+              {#if hb64 != myAgentPubKeyB64}
+                <div
+                  class="person"
+                  class:selected={selected}
+                  on:click={()=>{
+                    if (currentStream) {
+                      unseen.set(currentStream, $lastSeen.get(currentStream))
+                    }
+                    currentStream = hash
+                    unseen.set(hash, $lastSeen.get(hash))
+                    unseen = unseen
+                  }}
+                  class:person-inactive={!isActive($lastSeen, hash)} 
+                  title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
+                  <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
+                  <span style="margin-left:5px">{profile.entry.nickname}</span>
           
-        {/each}
+                  {#if !selected &&  unseen.get(hash) != $lastSeen.get(hash)}
+                    <span style="color:red;margin-left:5px">●</span>
+                  {/if}
+                </div>
+              {/if}          
+            {/each}
+          </div>
+          <div class="stream">
+            {#if currentStream}
+              <StreamPane hash={currentStream} />
+            {/if}
+          </div>
+        </div>
+        <div style="position:absolute;bottom:0px;background-color:gray;width 100%;">
+          <Toolbar />
+        </div>
             <!-- <div class="welcome-text">
               <div style="display:flex; flex-direction:column">
 
@@ -211,5 +251,28 @@
   .flex-scrollable-y {
     max-height: 100%;
     overflow-y: auto;
+  }
+  .main-pane {
+    display:flex;
+    flex-direction: row;
+  }
+  .people {
+    display:flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .person {
+    display: flex;
+    padding:5px;
+    cursor: pointer;
+    border-right: solid 1px gray;
+  }
+  .person-inactive {
+    opacity: .5;
+  }
+  .selected {
+    background-color: lightgoldenrodyellow;
+    border-right: none;
+
   }
 </style>

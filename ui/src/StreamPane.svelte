@@ -7,7 +7,7 @@
     import { isWeContext } from '@lightningrodlabs/we-applet';
     import type {  ZipZapStore } from "./store";
     import { encodeHashToBase64 } from '@holochain/client';
-  import { Stream } from './stream';
+    import { Stream } from './stream';
 
     const { getStore } :any = getContext('store');
     const store:ZipZapStore = getStore();
@@ -33,12 +33,13 @@
 
     let inputElement;
     let disabled
-
+    const sendMessage = async ()=>{
+            await store.client.sendMessage(streamId, {type:"Msg", text:inputElement.value, created: Date.now()},[hash, store.myAgentPubKey])
+            inputElement.value=""
+        }
 </script>
 <div class="person-feed">
     <div class="header">
-        <Avatar size={16} agentPubKey={hash} placeholder={false} showNickname={true}/>
-        Last Seen: { $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}
     </div>
     <div class="stream">
       {#each $messages as msg}
@@ -60,47 +61,53 @@
     <div class="send-controls">
       <sl-input bind:this={inputElement}
         on:sl-input={(e)=>disabled = !e.target.value || !inputElement.value}
+        on:keydown={(e)=> {
+            if (e.keyCode == 13) {
+              sendMessage()
+              e.stopPropagation()
+            }
+        }}
         placeholder="Message"
         style="width:100%"
         ></sl-input>
         
       <sl-button 
           style="margin-left:10px;"
-          variant="primary"
+          circle
           disabled={disabled}
-          on:click={async ()=>{
-            await store.client.sendMessage(streamId, {type:"Msg", text:inputElement.value, created: Date.now()},[hash, store.myAgentPubKey])
-            inputElement.value=""
-        }}>Send
+          on:click={sendMessage}
+          ><SvgIcon icon=zipzap size=20 />
       </sl-button>
     </div>
   </div>
 
 <style>
-.person-feed{
-    margin-top:10px;
+  .person-feed{
+    padding-left:10px;
     display:flex; 
     flex-direction:column;
-    border: solid 1px lightblue;
-    border-radius: 10px;
-    background-color: gray;
+    background-color: lightgoldenrodyellow;
+  }
+  .header {
+    display: flex;
+    justify-content: flex-end;
   }
   .stream {
-    background-color: #444;
     display:flex;
     flex-direction: column;
     overflow-y:auto;
   }
   .msg {
     margin: 5px;
-    border-radius: 20px;
+    border-radius: 0px 15px 0px 15px;
     color: white;
     padding: 3px 10px;
     flex-shrink: 1;
     align-self: flex-start;
-    background-color: gray;
+    background-color: rebeccapurple;
   }
   .my-msg {
+    border-radius: 15px 0px 15px 0px ;
     align-self: flex-end;
     background-color: blue;
   }

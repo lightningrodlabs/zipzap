@@ -126,11 +126,11 @@ export class ZipZapStore {
             if (isWeContext()) {
                 this.weClient.notifyFrame([
                     {
-                        title: `message from ${encodeHashToBase64(message.from)}`,
+                        title: `message from :${encodeHashToBase64(message.from)}`,
                         body: message.payload.text,
                         notification_type: "message",
                         icon_src: undefined,
-                        urgency: "medium",
+                        urgency: "high",
                         timestamp: message.payload.created
                     }
                 ])
