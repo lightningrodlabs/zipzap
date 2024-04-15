@@ -30,25 +30,35 @@ export default defineConfig({
             },
           },
         },
+        {
+          agentIdx: 3,
+          agentProfile: {
+            nickname: 'Griffy',
+            avatar: {
+              type: 'filesystem',
+              path: './we_dev/griffy.png',
+            },
+          },
+        },
       ],
       applets: [
         {
           name: 'ZipZap Hot Reload',
           instanceName: 'ZipZap Hot Reload',
           registeringAgent: 1,
-          joiningAgents: [2],
+          joiningAgents: [2,3],
         },
         {
           name: 'kando',
           instanceName: 'kando',
           registeringAgent: 1,
-          joiningAgents: [2],
+          joiningAgents: [2,3],
         },
         {
           name: 'notebooks',
           instanceName: 'notebooks',
           registeringAgent: 1,
-          joiningAgents: [2],
+          joiningAgents: [2,3],
         },
       ],
     },

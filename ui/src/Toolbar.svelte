@@ -44,14 +44,9 @@
     padding-right: 10px;
   }
   .logo {
-    height: 40px;
     margin-right: 10px;
     display: contents;
     cursor: pointer;
-  }
-  .logo-text {
-    padding-bottom: 5px;
-    margin-left: 15px;
   }
   .right-items {
     display: flex;

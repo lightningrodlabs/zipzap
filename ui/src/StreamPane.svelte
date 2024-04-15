@@ -8,15 +8,15 @@
     import { encodeHashToBase64 } from '@holochain/client';
     import { Stream, type Payload } from './stream';
     import {isActive} from "./util"
-  import type { AgentPubKey } from '@holochain/client';
-  import type { HoloHashMap } from '@holochain-open-dev/utils';
+    import type { AgentPubKey } from '@holochain/client';
+    import type { HoloHashMap } from '@holochain-open-dev/utils';
 
     const { getStore } :any = getContext('store');
     const store:ZipZapStore = getStore();
     
     export let hashes:Array<AgentPubKey>
+    export let streamId: string
 
-    let streamId=JSON.stringify(hashes.concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())
      //@ts-ignore
      $: myProfile = get(store.profilesStore.myProfile).value
     if (!store.streams[streamId]) {
@@ -36,7 +36,8 @@
     let disabled
     const sendMessage = async ()=>{
       const payload: Payload = {type:"Msg", text:inputElement.value, created: Date.now()}
-      store.addMessageToStream(streamId, {payload, from:store.myAgentPubKey, received:Date.now() }) 
+      store.addMessageToStream(streamId, {payload, from:store.myAgentPubKey, received:Date.now() })
+      console.log("SENDINT to", hashes.map(agent=>encodeHashToBase64(agent)))
       await store.client.sendMessage(streamId, payload, hashes)
       inputElement.value=""
     }
@@ -79,7 +80,7 @@
       {/each}
     </div>
     <div class="send-controls">
-      <sl-input bind:this={inputElement}
+      <sl-input style="width:100%" bind:this={inputElement}
         on:sl-input={(e)=>disabled = !e.target.value || !inputElement.value}
         on:keydown={(e)=> {
             if (e.keyCode == 13) {
@@ -88,7 +89,6 @@
             }
         }}
         placeholder="Message"
-        style="width:100%"
         ></sl-input>
         
       <sl-button 
@@ -107,15 +107,19 @@
     display:flex; 
     flex-direction:column;
     background-color: lightgoldenrodyellow;
+    width: 100%;
   }
   .header {
     display: flex;
     justify-content: flex-end;
   }
   .stream {
+    width:100%;
     display:flex;
+    flex:auto;
     flex-direction: column;
     overflow-y:auto;
+    height: 0px;
   }
   .msg {
     display:flex;

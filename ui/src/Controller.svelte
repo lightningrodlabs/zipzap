@@ -16,11 +16,19 @@
   import { HoloHashMap } from "@holochain-open-dev/utils";
   import "@holochain-open-dev/profiles/dist/elements/agent-avatar.js";
   import {isActive} from "./util"
+  import AboutDialog from "./AboutDialog.svelte";
 
   export let roleName = "";
   export let client: AppAgentClient;
   export let profilesStore: ProfilesStore;
   export let weClient : WeClient
+
+  let aboutDialog
+
+  type StreamDef = {
+    hashes: Array<AgentPubKey>
+    lastSeenActivity: number
+  }
 
   let store: ZipZapStore = new ZipZapStore(
     weClient,
@@ -39,10 +47,11 @@
   $: thingsList = store.thingsList
   $: allProfiles = store.profilesStore.allProfiles
   $: allPeople = $allProfiles.status=== "complete" ? Array.from($allProfiles.value.entries()) : []
-  let currentStream: AgentPubKey | undefined = undefined
   let unseen: HoloHashMap<AgentPubKey,number> = new HoloHashMap()
   $:lastSeen = store.lastSeen
-
+  $:lastActivity = store.lastActivity
+  let streams: {[key:string]: StreamDef} = {}
+  let currentStream: string|undefined = undefined
 
   let fileinput;
   const onFileSelected = (e) => {
@@ -64,21 +73,50 @@
 <div class="flex-scrollable-parent">
   <div class="flex-scrollable-container">
     <div class="app">
+
       {#if store}
+        <AboutDialog bind:this={aboutDialog} />
+
         <div class="main-pane">
           <div class="people">
+            <div class="person"
+              class:selected={currentStream == "_all"}
+              on:click={()=>{
+ 
+                if (streams[currentStream])
+                  streams[currentStream].lastSeenActivity = $lastActivity[currentStream]
+                const hashes  = allPeople.map(([agent,_])=>agent).filter(agent=>encodeHashToBase64(agent) != store.myAgentPubKeyB64)
+                currentStream = "_all"
+                streams[currentStream] = {hashes, lastSeenActivity: $lastActivity[currentStream]}
+                hashes.map(a=>unseen.set(a, $lastSeen.get(a)))
+                // if (currentStream) {
+                //   unseen.set(currentStream, $lastSeen.get(currentStream))
+                // }
+                // currentStream = hash
+                // unseen.set(hash, $lastSeen.get(hash))
+                unseen = unseen
+              }}
+            >
+              Everybody 
+              {#if currentStream != "_all" &&  (streams["_all"] ?  streams["_all"].lastSeenActivity : 0)  < $lastActivity["_all"]}
+                <span style="color:red;margin-left:5px">●</span>
+              {/if}
+
+            </div>
             {#each allPeople as [hash,profile]}
               {@const hb64 = encodeHashToBase64(hash)}
-              {@const selected = currentStream && hb64 == encodeHashToBase64(currentStream)}
+              {@const thisUserStreamId = JSON.stringify([hash].concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())}
+              {@const selected = currentStream == thisUserStreamId}
               {#if hb64 != myAgentPubKeyB64}
                 <div
                   class="person"
                   class:selected={selected}
                   on:click={()=>{
-                    if (currentStream) {
-                      unseen.set(currentStream, $lastSeen.get(currentStream))
-                    }
-                    currentStream = hash
+                    if (streams[currentStream])
+                        streams[currentStream].lastSeenActivity = $lastActivity[currentStream]
+                     currentStream = thisUserStreamId
+                    streams[currentStream] = {hashes: [hash], lastSeenActivity:$lastActivity[currentStream]}
+
                     unseen.set(hash, $lastSeen.get(hash))
                     unseen = unseen
                   }}
@@ -89,21 +127,26 @@
                   </div>
                   <span style="margin-left:5px">{profile.entry.nickname}</span>
           
-                  {#if !selected &&  unseen.get(hash) != $lastSeen.get(hash)}
+                  {#if !selected &&  (streams[thisUserStreamId] ?  streams[thisUserStreamId].lastSeenActivity : 0) < $lastActivity[thisUserStreamId]}
                     <span style="color:red;margin-left:5px">●</span>
                   {/if}
+
                 </div>
               {/if}          
             {/each}
           </div>
           <div class="stream">
-            {#if currentStream}
-              <StreamPane hashes={[currentStream]} />
-            {/if}
+            {#each Object.entries(streams) as [streamId, {hashes}]}
+              {#if currentStream == streamId}
+                <StreamPane streamId={streamId} hashes={hashes} />
+              {/if}
+            {/each}
           </div>
         </div>
-        <div style="position:absolute;bottom:0px;">
-          <Toolbar />
+        <div class="footer"
+          on:click={()=>aboutDialog.open()}
+          >
+          <SvgIcon icon=zipzap></SvgIcon> Ephemeral Chat with ZipZap <SvgIcon icon=faCog></SvgIcon>
         </div>
             <!-- <div class="welcome-text">
               <div style="display:flex; flex-direction:column">
@@ -171,13 +214,18 @@
 <style>
   .app {
     margin: 0;
-    padding-bottom: 10px;
     background-image: var(--bg-img, url(""));
     background-size: cover;
     display: flex;
     flex-direction: column;
     min-height: 0;
     height: 100vh;
+  }
+  .footer {
+    border-top: 1px solid lightgray;
+    padding-left:10px;
+    padding-top:3px;
+    padding-bottom:3px;
   }
   :global(:root) {
     --resizeable-height: 200px;
@@ -252,18 +300,19 @@
   }
   .main-pane {
     display:flex;
+    flex: 1;
     flex-direction: row;
   }
   .people {
     display:flex;
     flex-direction: column;
     height: 100%;
+    
   }
   .person {
     display: flex;
     padding:5px;
     cursor: pointer;
-    border-right: solid 1px gray;
   }
   .person-inactive {
     opacity: .5;
@@ -271,6 +320,10 @@
   .selected {
     background-color: lightgoldenrodyellow;
     border-right: none;
-
   }
+  .stream {
+    display:flex;
+    width:100%;
+  }
+  
 </style>

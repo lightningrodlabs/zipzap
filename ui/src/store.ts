@@ -110,10 +110,15 @@ export class ZipZapStore {
     dnaHash: DnaHash
     streams: {[key: string]: Stream} = {}
     lastSeen: Writable<HoloHashMap<AgentPubKey,number>> = writable(new HoloHashMap())
+    lastActivity: Writable<{[key:string]: number}> = writable({})
 
     async addMessageToStream(streamId: string, message: Message) {
+        this.lastActivity.update(l=>{
+            l[streamId]=message.received
+            return l
+        })
         this.lastSeen.update(l=>{
-            l.set(message.from,Date.now())
+            l.set(message.from,message.received)
             return l
         })
         let stream = this.streams[streamId]
