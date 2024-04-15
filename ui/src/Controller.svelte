@@ -15,6 +15,7 @@
   import type { AgentPubKey } from "@holochain/client";
   import { HoloHashMap } from "@holochain-open-dev/utils";
   import "@holochain-open-dev/profiles/dist/elements/agent-avatar.js";
+  import {isActive} from "./util"
 
   export let roleName = "";
   export let client: AppAgentClient;
@@ -42,11 +43,6 @@
   let unseen: HoloHashMap<AgentPubKey,number> = new HoloHashMap()
   $:lastSeen = store.lastSeen
 
-  const isActive = (lastSeen, hash) => {
-      const seen = lastSeen.get(hash)
-      if (!seen) return false
-      return Date.now()-seen < 30001
-    }
 
   let fileinput;
   const onFileSelected = (e) => {
@@ -86,9 +82,11 @@
                     unseen.set(hash, $lastSeen.get(hash))
                     unseen = unseen
                   }}
-                  class:person-inactive={!isActive($lastSeen, hash)} 
+                  
                   title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
-                  <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
+                  <div class:person-inactive={!isActive($lastSeen, hash)} >
+                    <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
+                  </div>
                   <span style="margin-left:5px">{profile.entry.nickname}</span>
           
                   {#if !selected &&  unseen.get(hash) != $lastSeen.get(hash)}
@@ -100,11 +98,11 @@
           </div>
           <div class="stream">
             {#if currentStream}
-              <StreamPane hash={currentStream} />
+              <StreamPane hashes={[currentStream]} />
             {/if}
           </div>
         </div>
-        <div style="position:absolute;bottom:0px;background-color:gray;width 100%;">
+        <div style="position:absolute;bottom:0px;">
           <Toolbar />
         </div>
             <!-- <div class="welcome-text">

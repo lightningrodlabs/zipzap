@@ -1,21 +1,22 @@
 <script lang="ts">
     import '@shoelace-style/shoelace/dist/components/button/button.js';
     import { getContext, onMount } from "svelte";
-    import Avatar from './Avatar.svelte';
     import { get } from 'svelte/store';    
     import SvgIcon from "./SvgIcon.svelte";
     import { isWeContext } from '@lightningrodlabs/we-applet';
     import type {  ZipZapStore } from "./store";
     import { encodeHashToBase64 } from '@holochain/client';
-    import { Stream } from './stream';
+    import { Stream, type Payload } from './stream';
+    import {isActive} from "./util"
+  import type { AgentPubKey } from '@holochain/client';
+  import type { HoloHashMap } from '@holochain-open-dev/utils';
 
     const { getStore } :any = getContext('store');
     const store:ZipZapStore = getStore();
     
-    export let hash
-    let  hb64 = encodeHashToBase64(hash)
+    export let hashes:Array<AgentPubKey>
 
-    let streamId=JSON.stringify([store.myAgentPubKeyB64,hb64].sort())
+    let streamId=JSON.stringify(hashes.concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())
      //@ts-ignore
      $: myProfile = get(store.profilesStore.myProfile).value
     if (!store.streams[streamId]) {
@@ -34,25 +35,44 @@
     let inputElement;
     let disabled
     const sendMessage = async ()=>{
-            await store.client.sendMessage(streamId, {type:"Msg", text:inputElement.value, created: Date.now()},[hash, store.myAgentPubKey])
-            inputElement.value=""
-        }
+      const payload: Payload = {type:"Msg", text:inputElement.value, created: Date.now()}
+      store.addMessageToStream(streamId, {payload, from:store.myAgentPubKey, received:Date.now() }) 
+      await store.client.sendMessage(streamId, payload, hashes)
+      inputElement.value=""
+    }
+    const getAckCount = (acks: { [key: number]: HoloHashMap<Uint8Array, boolean>; }, msgId) : number =>{
+      const ack = acks[msgId]
+      if (ack) {
+        return ack.size
+      }
+      return 0
+    }
 </script>
 <div class="person-feed">
-    <div class="header">
-    </div>
-    <div class="stream">
+  <div class="header">
+    {#each hashes as hash}
+      {@const hb64 = encodeHashToBase64(hash)}
+      <div style={isActive($lastSeen, hash)?"": "opacity: .5;"} title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
+        <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
+      </div>
+    {/each}
+  </div>
+  <div class="stream">
       {#each $messages as msg}
         {@const isMyMessage = encodeHashToBase64(msg.from) == store.myAgentPubKeyB64}
         <div class="msg"
           class:my-msg={isMyMessage}
           >
           {#if msg.payload.type == "Msg"}
-            {@const ack = $acks[msg.payload.created]}
             {msg.payload.text}
             <span class="msg-timestamp">{new Date(msg.received).toLocaleTimeString()}</span>
             {#if isMyMessage}
-              { ack && ack.get(hash)?"✓":""}
+              {@const ackCount = getAckCount($acks, msg.payload.created)}
+              {#if ackCount == hashes.length}
+              ✓
+              {:else if hashes.length>1}
+                <span class="ack-count">{ackCount}</span>
+              {/if}
             {/if}
           {/if}
         </div>
@@ -98,6 +118,7 @@
     overflow-y:auto;
   }
   .msg {
+    display:flex;
     margin: 5px;
     border-radius: 0px 15px 0px 15px;
     color: white;
@@ -120,6 +141,18 @@
     margin-left:4px;
     font-size: 80%;
     color: #ccc;
+  }
+  .ack-count {
+    display:flex;
+    justify-content: center;
+    margin:auto;
+    width:15px;
+    height:15px;
+    margin-left: 5px;
+    background-color: yellow;
+    color: black;
+    font-size: 80%;
+    border-radius:50%;
   }
 
 </style>

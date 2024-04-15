@@ -135,7 +135,8 @@ export class ZipZapStore {
                     }
                 ])
             }
-            await this.client.sendMessage(streamId, {type:"Ack", created:message.payload.created},[message.from])
+            if (encodeHashToBase64(message.from) != this.myAgentPubKeyB64)
+                await this.client.sendMessage(streamId, {type:"Ack", created:message.payload.created},[message.from])
         }
     }
 

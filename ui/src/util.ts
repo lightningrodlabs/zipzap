@@ -19,3 +19,9 @@ export const getMyDna = async (role:string, client: AppAgentClient) : Promise<Dn
   ].cell_id[0];
   return dnaHash
 } 
+
+export const isActive = (lastSeen, hash) => {
+  const seen = lastSeen.get(hash)
+  if (!seen) return false
+  return Date.now()-seen < 30001
+}
