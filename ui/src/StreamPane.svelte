@@ -10,12 +10,15 @@
     import {isActive} from "./util"
     import type { AgentPubKey } from '@holochain/client';
     import type { HoloHashMap } from '@holochain-open-dev/utils';
+  import { is_empty } from 'svelte/internal';
 
     const { getStore } :any = getContext('store');
     const store:ZipZapStore = getStore();
     
     export let hashes:Array<AgentPubKey>
     export let streamId: string
+
+    const showFrom = streamId == "_all" || JSON.parse(streamId).length > 2
 
      //@ts-ignore
      $: myProfile = get(store.profilesStore.myProfile).value
@@ -51,12 +54,15 @@
 </script>
 <div class="person-feed">
   <div class="header">
-    {#each hashes as hash}
-      {@const hb64 = encodeHashToBase64(hash)}
-      <div style={isActive($lastSeen, hash)?"": "opacity: .5;"} title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
-        <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
-      </div>
-    {/each}
+    <span>Messages: {$messages.length}</span>
+    <div style="display:flex;">
+      {#each hashes as hash}
+        {@const hb64 = encodeHashToBase64(hash)}
+        <div style={isActive($lastSeen, hash)?"": "opacity: .5;"} title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
+          <agent-avatar  disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
+        </div>
+      {/each}
+    </div>
   </div>
   <div class="stream">
       {#each $messages as msg}
@@ -65,6 +71,9 @@
           class:my-msg={isMyMessage}
           >
           {#if msg.payload.type == "Msg"}
+            {#if !isMyMessage && showFrom}
+              <agent-avatar style="margin-right:5px" disable-copy={true} size={20} agent-pub-key="{encodeHashToBase64(msg.from)}"></agent-avatar>
+            {/if}
             {msg.payload.text}
             <span class="msg-timestamp">{new Date(msg.received).toLocaleTimeString()}</span>
             {#if isMyMessage}
@@ -111,7 +120,7 @@
   }
   .header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
   }
   .stream {
     width:100%;

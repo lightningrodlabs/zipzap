@@ -82,7 +82,6 @@
             <div class="person"
               class:selected={currentStream == "_all"}
               on:click={()=>{
- 
                 if (streams[currentStream])
                   streams[currentStream].lastSeenActivity = $lastActivity[currentStream]
                 const hashes  = allPeople.map(([agent,_])=>agent).filter(agent=>encodeHashToBase64(agent) != store.myAgentPubKeyB64)
@@ -106,19 +105,27 @@
             {#each allPeople as [hash,profile]}
               {@const hb64 = encodeHashToBase64(hash)}
               {@const thisUserStreamId = JSON.stringify([hash].concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())}
-              {@const selected = currentStream == thisUserStreamId}
+              {@const selected = currentStream == thisUserStreamId || (currentStream && currentStream != "_all" && JSON.parse(currentStream).includes(hb64))}
               {#if hb64 != myAgentPubKeyB64}
                 <div
                   class="person"
                   class:selected={selected}
-                  on:click={()=>{
+                  on:click={(e)=>{
+                    e.stopPropagation()
                     if (streams[currentStream])
                         streams[currentStream].lastSeenActivity = $lastActivity[currentStream]
-                     currentStream = thisUserStreamId
-                    streams[currentStream] = {hashes: [hash], lastSeenActivity:$lastActivity[currentStream]}
 
-                    unseen.set(hash, $lastSeen.get(hash))
-                    unseen = unseen
+                    let hashes = [hash]
+                    let newStreamId = thisUserStreamId
+                    if (e.shiftKey && currentStream && currentStream != "_all") {
+                      if (!streams[currentStream].hashes.find(h=>encodeHashToBase64(h)==hb64)) {
+                        hashes = hashes.concat(streams[currentStream].hashes)
+                      }
+                      newStreamId = JSON.stringify(hashes.concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())
+                    }
+
+                    currentStream = newStreamId
+                    streams[currentStream] = {hashes, lastSeenActivity:$lastActivity[currentStream]}
                   }}
                   
                   title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
@@ -313,6 +320,7 @@
     display: flex;
     padding:5px;
     cursor: pointer;
+    user-select: none;
   }
   .person-inactive {
     opacity: .5;
