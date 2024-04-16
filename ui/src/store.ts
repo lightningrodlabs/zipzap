@@ -111,6 +111,20 @@ export class ZipZapStore {
     streams: {[key: string]: Stream} = {}
     lastSeen: Writable<HoloHashMap<AgentPubKey,number>> = writable(new HoloHashMap())
     lastActivity: Writable<{[key:string]: number}> = writable({})
+    expectations: HoloHashMap<AgentPubKey,Array<number>> = new HoloHashMap()
+
+    async sendMessage(streamId: string, payload: Payload, agents: AgentPubKey[]) {
+        console.log("Sending Message to", agents.map(agent=>encodeHashToBase64(agent)))
+        this.addMessageToStream(streamId, {payload, from:this.myAgentPubKey, received:Date.now() })
+        for (const agent of agents) {
+            let messageList:Array<number> = this.expectations.get(agent)
+            if (!messageList) {messageList = []}
+            messageList.push(payload.created)
+            this.expectations.set(agent, messageList)
+        }
+        await this.client.sendMessage(streamId, payload, agents)
+
+    }
 
     async addMessageToStream(streamId: string, message: Message) {
         this.lastActivity.update(l=>{
@@ -126,12 +140,13 @@ export class ZipZapStore {
             stream = new Stream(streamId)
             this.streams[streamId] = stream
         }
+
         stream.addMessage(message)
         if (message.payload.type == "Msg") {
             if (isWeContext()) {
                 this.weClient.notifyFrame([
                     {
-                        title: `message from :${encodeHashToBase64(message.from)}`,
+                        title: `message from ${encodeHashToBase64(message.from)}`,
                         body: message.payload.text,
                         notification_type: "message",
                         icon_src: undefined,
@@ -140,8 +155,9 @@ export class ZipZapStore {
                     }
                 ])
             }
-            if (encodeHashToBase64(message.from) != this.myAgentPubKeyB64)
+            if (encodeHashToBase64(message.from) != this.myAgentPubKeyB64) {
                 await this.client.sendMessage(streamId, {type:"Ack", created:message.payload.created},[message.from])
+            }
         }
     }
 
@@ -157,8 +173,8 @@ export class ZipZapStore {
             this.roleName,
             this.zomeName
           );
-        this.client.onSignal((signal)=>{
-            console.log("MSG",signal)
+        this.client.onSignal(async (signal)=>{
+            console.log("Got Signal:",signal)
             
             // @ts-ignore
             if (signal.type == "Message") {
@@ -174,6 +190,29 @@ export class ZipZapStore {
                     received: Date.now()
                 }
                 this.addMessageToStream(streamId, message)
+                let messageList = this.expectations.get(message.from)
+                if (messageList) {
+                    if (payload.type == "Ack") {
+                        const idx = messageList.findIndex((created) => created == payload.created)
+                        if (idx >= 0) {
+                            messageList.splice(idx,1)
+                            this.expectations.set(message.from, messageList)
+                        }
+                    }
+                    // we just received a message from someone who we are expecting
+                    // to have acked something but they haven't so we retry to send the message
+                    if (messageList.length > 0) {
+                        for (const msgId of messageList) {
+                            for (const stream of Object.values(this.streams)) {
+                                const msg = stream.findMessage(msgId)
+                                if (msg) {
+                                    console.log("Resending", msg)
+                                    await this.client.sendMessage(stream.id, msg.payload, [message.from])
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
         })

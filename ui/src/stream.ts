@@ -1,6 +1,6 @@
 import { HoloHashMap } from "@holochain-open-dev/utils";
 import type { AgentPubKey } from "@holochain/client";
-import { writable, type Readable, type Writable, derived } from "svelte/store";
+import { writable, type Readable, type Writable, derived, get } from "svelte/store";
 
 export type Msg = {
     created: number,
@@ -19,12 +19,13 @@ export type Message = {
 }
 
 export class Stream {
-    store:Writable<Message[]> = writable([])
+    _store = {}
+    private store:Writable<Message[]> = writable([])
     messages:Readable<Message[]>
     acks:Writable<{[key: number]:HoloHashMap<AgentPubKey,boolean>}> = writable({})
     constructor(public id : string,
     ) {
-        this.messages = derived(this.store,s=>s.sort((a,b)=>a.received - b.received))
+        this.messages = derived(this.store,s=>s.sort((a,b)=>a.payload.created - b.payload.created))
     }
     addMessage(message: Message) {
         if (message.payload.type == "Ack") {
@@ -38,12 +39,17 @@ export class Stream {
                 return acks
             })
         } else if (message.payload.type == "Msg") {
-            console.log("Adding Message", message)
-            this.store.update((messages)=>{
-                messages.push(message)
-                return messages
-            })
+            if (! (message.payload.created in this._store)) {
+                console.log("Adding Message", message)
+                this._store[message.payload.created] =  message
+                this.store.update((messages)=>{
+                    messages.push(message)
+                    return messages
+                })
+            }
         }
     }
-
+    findMessage(msgId: number) {
+        return this._store[msgId]
+    }
 }

@@ -39,9 +39,7 @@
     let disabled
     const sendMessage = async ()=>{
       const payload: Payload = {type:"Msg", text:inputElement.value, created: Date.now()}
-      store.addMessageToStream(streamId, {payload, from:store.myAgentPubKey, received:Date.now() })
-      console.log("SENDINT to", hashes.map(agent=>encodeHashToBase64(agent)))
-      await store.client.sendMessage(streamId, payload, hashes)
+      await store.sendMessage(streamId, payload, hashes)
       inputElement.value=""
     }
     const getAckCount = (acks: { [key: number]: HoloHashMap<Uint8Array, boolean>; }, msgId) : number =>{
@@ -75,7 +73,7 @@
               <agent-avatar style="margin-right:5px" disable-copy={true} size={20} agent-pub-key="{encodeHashToBase64(msg.from)}"></agent-avatar>
             {/if}
             {msg.payload.text}
-            <span class="msg-timestamp">{new Date(msg.received).toLocaleTimeString()}</span>
+            <span title={`Received: ${new Date(msg.received).toLocaleTimeString()}`} class="msg-timestamp">{new Date(msg.payload.created).toLocaleTimeString()}</span>
             {#if isMyMessage}
               {@const ackCount = getAckCount($acks, msg.payload.created)}
               {#if ackCount == hashes.length}
