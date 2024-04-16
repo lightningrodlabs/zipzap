@@ -121,7 +121,11 @@
                       if (!streams[currentStream].hashes.find(h=>encodeHashToBase64(h)==hb64)) {
                         hashes = hashes.concat(streams[currentStream].hashes)
                       }
-                      newStreamId = JSON.stringify(hashes.concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())
+                      if (hashes.length == allPeople.length-1) { // all people also includes me so subtract 1
+                        newStreamId = "_all"
+                      } else {
+                        newStreamId = JSON.stringify(hashes.concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())
+                      }
                     }
 
                     currentStream = newStreamId
