@@ -215,7 +215,7 @@
           >
           <span><SvgIcon  icon=zipzap></SvgIcon></span>
            Ephemeral Chat with ZipZap 
-           <SvgIcon on:click={()=>aboutDialog.open()} icon=faCog></SvgIcon>
+          <span on:click={()=>aboutDialog.open()}><SvgIcon icon=faCog></SvgIcon></span>
         </div>
             <!-- <div class="welcome-text">
               <div style="display:flex; flex-direction:column">
