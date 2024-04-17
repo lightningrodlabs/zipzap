@@ -12,7 +12,7 @@
 
 <svelte:window on:keydown={handleKeydown}/>
 
-<sl-dialog label="ZipZap!: UI v0.1.0 for DNA v0.1.x" bind:this={dialog} width={600} >
+<sl-dialog label="ZipZap!: UI v0.1.1 for DNA v0.1.x" bind:this={dialog} width={600} >
     <div class="about">
         <p>ZipZap! is a demonstration Holochain app built by Lightningrod Labs.</p>
         <p> <b>Developers:</b>
