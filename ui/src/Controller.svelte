@@ -97,6 +97,8 @@
 
         <div class="main-pane">
           <div class="people">
+            <div style="height:30px; background-color: #eee;display:flex; justify-content:center;align-items:center;border-bottom: 1px solid lightgrey">
+              <SvgIcon  icon=zipzap></SvgIcon> <span style="font-weight:bold;font-size:110%">Stream</span></div>
             <div class="person"
               class:selected={currentStream == "_all"}
               on:click={()=>{
@@ -169,13 +171,13 @@
                 </div>
               {/if}          
             {/each}
-            <hr>
+            <div style="width:100%;height:1px;border-top:solid 1px lightgrey"></div>
             {#each Object.values($liveStreams) as stream}
-              {#if stream.id != "_all"}
+              {#if stream.id != "_all" && $lastActivity[stream.id]}
                 {@const streamAgents = JSON.parse(stream.id).filter(a=>a!=store.myAgentPubKeyB64)}
                 {@const selected = currentStream == stream.id}
                 {#if streamAgents.length > 1}
-                  <div style="padding=5px;display:flex; flex-wrap:wrap; justify-content:end"
+                  <div style="padding=5px;display:flex; flex-wrap:wrap; justify-content:end; padding:5px;"
 
                     on:click={(e)=>{
                       e.stopPropagation()
@@ -206,7 +208,16 @@
           <div class="stream">
             {#each Object.entries(streams) as [streamId, {hashes}]}
               {#if currentStream == streamId && $liveStreams[streamId]}
-                <StreamPane stream={$liveStreams[streamId]} hashes={hashes} />
+                <StreamPane 
+                  on:zap={()=>{
+                    store.zapStream(streamId)
+                    if (currentStream == streamId) {
+                      currentStream = undefined
+                      delete streams[streamId]
+                    }
+                  }
+                  }
+                  stream={$liveStreams[streamId]} hashes={hashes} />
               {/if}
             {/each}
           </div>
@@ -215,7 +226,7 @@
           >
           <span><SvgIcon  icon=zipzap></SvgIcon></span>
            Ephemeral Chat with ZipZap 
-          <span on:click={()=>aboutDialog.open()}><SvgIcon icon=faCog></SvgIcon></span>
+          <span on:click={()=>aboutDialog.open()}><SvgIcon icon=info></SvgIcon></span>
         </div>
             <!-- <div class="welcome-text">
               <div style="display:flex; flex-direction:column">

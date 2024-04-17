@@ -142,6 +142,12 @@ export class ZipZapStore {
         })
         return stream
     }
+    zapStream(streamId: string) {
+        this.streams.update(s=>{
+            delete s[streamId]
+            return s
+        })
+    }
 
     async addMessageToStream(streamId: string, message: Message) {
         if (message.payload.type != "Ping") {

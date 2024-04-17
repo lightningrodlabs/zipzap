@@ -1,8 +1,9 @@
 <script lang="ts">
     import '@shoelace-style/shoelace/dist/components/button/button.js';
-    import { getContext, onMount } from "svelte";
+    import { createEventDispatcher, getContext, onMount } from "svelte";
     import { get } from 'svelte/store';    
     import SvgIcon from "./SvgIcon.svelte";
+    import Confirm from "./Confirm.svelte";
     import { isWeContext } from '@lightningrodlabs/we-applet';
     import type {  ZipZapStore } from "./store";
     import { encodeHashToBase64 } from '@holochain/client';
@@ -18,6 +19,7 @@
     export let stream: Stream
 
     const showFrom = stream.id == "_all" || JSON.parse(stream.id).length > 2
+    const dispatch = createEventDispatcher()
 
     //@ts-ignore
     $: myProfile = get(store.profilesStore.myProfile).value
@@ -46,17 +48,37 @@
       }
       return 0
     }
+    let confirmDialog
 </script>
+<Confirm 
+    bind:this={confirmDialog}
+    message="Zap this stream?" 
+    on:confirm-confirmed={
+      () => {
+        dispatch("zap")
+      }
+    }></Confirm>
 <div class="person-feed">
   <div class="header">
-    <span>Messages: {$messages.length}</span>
-    <div style="display:flex;">
-      {#each hashes as hash}
+    <div>      
+      <span>Messages: {$messages.length}</span>
+    </div>
+    <div style="display:flex; align-items: center">
+      <sl-button
+      on:click={() => confirmDialog.open()}
+      style="margin-top: 5px;margin-right: 5px"
+      title="Zap"
+      circle
+      size="small"
+      ><SvgIcon icon=faClose size="10" /></sl-button
+    >
+
+      <!-- {#each hashes as hash}
         {@const hb64 = encodeHashToBase64(hash)}
         <div style="margin-right:5px;margin-top:5px;"  class:person-inactive={!$agentActive || !$agentActive.get(hash)} title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
           <agent-avatar  disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
         </div>
-      {/each}
+      {/each} -->
     </div>
   </div>
   <div class="stream">
