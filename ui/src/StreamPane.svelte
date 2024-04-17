@@ -6,40 +6,37 @@
     import { isWeContext } from '@lightningrodlabs/we-applet';
     import type {  ZipZapStore } from "./store";
     import { encodeHashToBase64 } from '@holochain/client';
-    import { Stream, type Payload } from './stream';
-    import {isActive} from "./util"
+    import type { Stream, Payload } from './stream';
     import type { AgentPubKey } from '@holochain/client';
     import type { HoloHashMap } from '@holochain-open-dev/utils';
-  import { is_empty } from 'svelte/internal';
+
 
     const { getStore } :any = getContext('store');
     const store:ZipZapStore = getStore();
     
     export let hashes:Array<AgentPubKey>
-    export let streamId: string
+    export let stream: Stream
 
-    const showFrom = streamId == "_all" || JSON.parse(streamId).length > 2
+    const showFrom = stream.id == "_all" || JSON.parse(stream.id).length > 2
 
-     //@ts-ignore
-     $: myProfile = get(store.profilesStore.myProfile).value
-    if (!store.streams[streamId]) {
-      store.streams[streamId] = new Stream(streamId)
-    }
-
+    //@ts-ignore
+    $: myProfile = get(store.profilesStore.myProfile).value
+    
     onMount(async () => {
         // if (!myName) {
         //     editAvatarDialog.open()
         // }
 	  });
-    $:messages = store.streams[streamId].messages
-    $:acks = store.streams[streamId].acks
+    $:messages = stream.messages
+    $:acks = stream.acks
     $:lastSeen = store.lastSeen
+    $:agentActive = store.agentActive
 
     let inputElement;
     let disabled
     const sendMessage = async ()=>{
       const payload: Payload = {type:"Msg", text:inputElement.value, created: Date.now()}
-      await store.sendMessage(streamId, payload, hashes)
+      await store.sendMessage(stream.id, payload, hashes)
       inputElement.value=""
     }
     const getAckCount = (acks: { [key: number]: HoloHashMap<Uint8Array, boolean>; }, msgId) : number =>{
@@ -56,7 +53,7 @@
     <div style="display:flex;">
       {#each hashes as hash}
         {@const hb64 = encodeHashToBase64(hash)}
-        <div style={isActive($lastSeen, hash)?"": "opacity: .5;"} title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
+        <div style="margin-right:5px;margin-top:5px;"  class:person-inactive={!$agentActive || !$agentActive.get(hash)} title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
           <agent-avatar  disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
         </div>
       {/each}
@@ -119,6 +116,7 @@
   .header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
   }
   .stream {
     width:100%;
@@ -164,6 +162,9 @@
     color: black;
     font-size: 80%;
     border-radius:50%;
+  }
+  .person-inactive {
+    opacity: .5;
   }
 
 </style>

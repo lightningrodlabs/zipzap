@@ -8,8 +8,9 @@ export type Msg = {
 }
 
 export type Payload = 
-    ({ type: 'Msg' } & Msg) |
-    ({type: 'Ack'} & {created:number})
+    ({type: 'Msg' } & Msg) |
+    ({type: 'Ack'} & {created:number}) |
+    ({type: 'Ping'} & {created:number})
 
 
 export type Message = {

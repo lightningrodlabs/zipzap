@@ -1,4 +1,5 @@
 import { type AppAgentClient, type EntryHash, type DnaHash, CellType } from "@holochain/client";
+import { readable } from "svelte/store";
 
 export type WALUrl = string
 
@@ -23,5 +24,15 @@ export const getMyDna = async (role:string, client: AppAgentClient) : Promise<Dn
 export const isActive = (lastSeen, hash) => {
   const seen = lastSeen.get(hash)
   if (!seen) return false
-  return Date.now()-seen < 30001
+  return Date.now()-seen < 11000
 }
+
+export const time = readable(Date.now(), function start(set) {
+	const interval = setInterval(() => {
+		set(Date.now());
+	}, 1000);
+
+	return function stop() {
+		clearInterval(interval);
+	};
+});

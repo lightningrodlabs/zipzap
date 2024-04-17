@@ -14,13 +14,15 @@ import TimeAgo from "javascript-time-ago"
 import en from 'javascript-time-ago/locale/en'
 import type { ProfilesStore } from '@holochain-open-dev/profiles';
 import { EntryRecord, LazyHoloHashMap, ZomeClient } from '@holochain-open-dev/utils';
-import { collectionStore, type AsyncReadable, latestVersionOfEntryStore, pipe, joinAsync, sliceAndJoin, asyncDerived, type Writable, writable, get, type Unsubscriber } from '@holochain-open-dev/stores';
+import { collectionStore, type AsyncReadable, latestVersionOfEntryStore, pipe, joinAsync, sliceAndJoin, asyncDerived, type Writable, writable, get, type Unsubscriber, type Readable } from '@holochain-open-dev/stores';
 import type { ActionCommittedSignal } from '@holochain-open-dev/utils';
 import { isWeContext, type WeClient } from '@lightningrodlabs/we-applet';
 import { HoloHashMap } from '@holochain-open-dev/utils/dist/holo-hash-map';
 import { getMyDna } from './util';
 import type { UnsubscribeFunction } from 'emittery';
 import { type Message, Stream, type Payload } from './stream';
+import {time} from "./util"
+import { derived } from 'svelte/store';
 
 
 TimeAgo.addDefaultLocale(en)
@@ -108,10 +110,16 @@ export class ZipZapStore {
     uiProps: Writable<UIProps> 
     unsub: Unsubscriber
     dnaHash: DnaHash
-    streams: {[key: string]: Stream} = {}
+    streams: Writable<{[key: string]: Stream}> = writable({})
     lastSeen: Writable<HoloHashMap<AgentPubKey,number>> = writable(new HoloHashMap())
     lastActivity: Writable<{[key:string]: number}> = writable({})
     expectations: HoloHashMap<AgentPubKey,Array<number>> = new HoloHashMap()
+    private _activeAgents: HoloHashMap<AgentPubKey,boolean> = new HoloHashMap()
+    agentActive: Readable<HoloHashMap<AgentPubKey,boolean>> = derived(time, ($time) => {
+        Array.from(get(this.lastSeen).entries()).forEach(
+            ([agent,lastSeen])=>this._activeAgents.set(agent, $time-lastSeen < 31000))
+        return this._activeAgents
+    });
 
     async sendMessage(streamId: string, payload: Payload, agents: AgentPubKey[]) {
         console.log("Sending Message to", agents.map(agent=>encodeHashToBase64(agent)))
@@ -126,19 +134,29 @@ export class ZipZapStore {
 
     }
 
-    async addMessageToStream(streamId: string, message: Message) {
-        this.lastActivity.update(l=>{
-            l[streamId]=message.received
-            return l
+    newStream(streamId: string) : Stream {
+        const stream = new Stream(streamId)
+        this.streams.update(s=>{
+            s[streamId] = stream
+            return s
         })
+        return stream
+    }
+
+    async addMessageToStream(streamId: string, message: Message) {
+        if (message.payload.type != "Ping") {
+            this.lastActivity.update(l=>{
+                l[streamId]=message.received
+                return l
+            })
+        }
         this.lastSeen.update(l=>{
             l.set(message.from,message.received)
             return l
         })
-        let stream = this.streams[streamId]
+        let stream = get(this.streams)[streamId]
         if (! stream) {
-            stream = new Stream(streamId)
-            this.streams[streamId] = stream
+            stream = this.newStream(streamId)
         }
 
         stream.addMessage(message)
@@ -202,8 +220,9 @@ export class ZipZapStore {
                     // we just received a message from someone who we are expecting
                     // to have acked something but they haven't so we retry to send the message
                     if (messageList.length > 0) {
+                        const streams = Object.values(get(this.streams))
                         for (const msgId of messageList) {
-                            for (const stream of Object.values(this.streams)) {
+                            for (const stream of streams) {
                                 const msg = stream.findMessage(msgId)
                                 if (msg) {
                                     console.log("Resending", msg)

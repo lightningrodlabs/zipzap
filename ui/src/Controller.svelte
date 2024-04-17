@@ -1,22 +1,19 @@
 <script lang="ts">
-  import Toolbar from "./Toolbar.svelte";
   import { ZipZapStore } from "./store";
-  import { setContext } from "svelte";
+  import { onMount, setContext } from "svelte";
   import type { AppAgentClient, EntryHash } from "@holochain/client";
-  import type { ProfilesStore } from "@holochain-open-dev/profiles";
+  import type { Profile, ProfilesStore } from "@holochain-open-dev/profiles";
   import SvgIcon from "./SvgIcon.svelte";
   import Avatar from "./Avatar.svelte";
   import StreamPane from "./StreamPane.svelte";
-  import { cloneDeep } from "lodash";
-  import { v1 as uuidv1 } from "uuid";
   import ThingItem from "./ThingItem.svelte";
   import type { WeClient } from "@lightningrodlabs/we-applet";
-  import { encodeHashToBase64 } from "@holochain/client";
+  import { decodeHashFromBase64, encodeHashToBase64 } from "@holochain/client";
   import type { AgentPubKey } from "@holochain/client";
-  import { HoloHashMap } from "@holochain-open-dev/utils";
+  import { EntryRecord, HoloHashMap } from "@holochain-open-dev/utils";
   import "@holochain-open-dev/profiles/dist/elements/agent-avatar.js";
-  import {isActive} from "./util"
   import AboutDialog from "./AboutDialog.svelte";
+  import {time} from "./util"
 
   export let roleName = "";
   export let client: AppAgentClient;
@@ -41,17 +38,38 @@
     getStore: () => store,
   });
 
+  let interval
+  const setupPing = (allProfiles:ReadonlyMap<Uint8Array, EntryRecord<Profile>>) => {
+    if (interval) {
+      clearInterval(interval)
+    }
+    const people = Array.from(allProfiles.entries()).filter(([agent,p])=>encodeHashToBase64(agent) != store.myAgentPubKeyB64)
+    const agents = people.map(([agent,p])=>agent)
+    store.client.sendMessage("_all", {type:"Ping", created:Date.now()}, agents)
+    interval = setInterval(() => {
+      store.client.sendMessage("_all", {type:"Ping", created:Date.now()}, agents)
+    }, 30000);
+    return people
+  }
+  window.addEventListener("beforeunload", function (e) {
+    clearInterval(interval);
+  });
+
   $: myAgentPubKeyB64 = store.myAgentPubKeyB64
   $: myProfile = store.profilesStore.myProfile
   $: thingHashes = store.thingHashes
   $: thingsList = store.thingsList
   $: allProfiles = store.profilesStore.allProfiles
-  $: allPeople = $allProfiles.status=== "complete" ? Array.from($allProfiles.value.entries()) : []
+  $: allPeople = $allProfiles.status=== "complete" ? setupPing($allProfiles.value) : []
   let unseen: HoloHashMap<AgentPubKey,number> = new HoloHashMap()
   $:lastSeen = store.lastSeen
   $:lastActivity = store.lastActivity
+  $:agentActive = store.agentActive
   let streams: {[key:string]: StreamDef} = {}
   let currentStream: string|undefined = undefined
+  $:liveStreams = store.streams
+
+  $: timer = time
 
   let fileinput;
   const onFileSelected = (e) => {
@@ -87,6 +105,9 @@
                 const hashes  = allPeople.map(([agent,_])=>agent).filter(agent=>encodeHashToBase64(agent) != store.myAgentPubKeyB64)
                 currentStream = "_all"
                 streams[currentStream] = {hashes, lastSeenActivity: $lastActivity[currentStream]}
+                if (!$liveStreams["_all"]) {
+                  store.newStream("_all")
+                }
                 hashes.map(a=>unseen.set(a, $lastSeen.get(a)))
                 // if (currentStream) {
                 //   unseen.set(currentStream, $lastSeen.get(currentStream))
@@ -130,11 +151,14 @@
 
                     currentStream = newStreamId
                     streams[currentStream] = {hashes, lastSeenActivity:$lastActivity[currentStream]}
+                    if (!$liveStreams[currentStream]) {
+                      store.newStream(currentStream)
+                    }
                   }}
                   
                   title={`Last Seen: ${ $lastSeen.get(hash) ? new Date($lastSeen.get(hash)).toLocaleTimeString(): "never"}`} >
-                  <div class:person-inactive={!isActive($lastSeen, hash)} >
-                    <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{hb64}"></agent-avatar>
+                  <div class:person-inactive={!$agentActive || !$agentActive.get(hash)} >
+                    <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={25} agent-pub-key="{hb64}"></agent-avatar>
                   </div>
                   <span style="margin-left:5px">{profile.entry.nickname}</span>
           
@@ -145,19 +169,53 @@
                 </div>
               {/if}          
             {/each}
+            <hr>
+            {#each Object.values($liveStreams) as stream}
+              {#if stream.id != "_all"}
+                {@const streamAgents = JSON.parse(stream.id).filter(a=>a!=store.myAgentPubKeyB64)}
+                {@const selected = currentStream == stream.id}
+                {#if streamAgents.length > 1}
+                  <div style="padding=5px;display:flex; flex-wrap:wrap; justify-content:end"
+
+                    on:click={(e)=>{
+                      e.stopPropagation()
+                      if (streams[currentStream])
+                          streams[currentStream].lastSeenActivity = $lastActivity[currentStream]
+
+                      
+                      currentStream = stream.id
+                      streams[stream.id] = {
+                        hashes: streamAgents.map(a=>decodeHashFromBase64(a)), lastSeenActivity: $lastActivity[currentStream]}
+                      currentStream = stream.id
+                    }}
+
+                    class:selected ={selected}
+                    
+                  >
+                    {#each streamAgents as aB64}
+                      <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{aB64}"></agent-avatar>                  
+                    {/each}
+                    {#if !selected &&  (streams[stream.id] ?  streams[stream.id].lastSeenActivity : 0) < $lastActivity[stream.id]}
+                      <span style="color:red;margin-left:5px">●</span>
+                    {/if}
+                  </div>
+                {/if}
+              {/if}
+            {/each}
           </div>
           <div class="stream">
             {#each Object.entries(streams) as [streamId, {hashes}]}
-              {#if currentStream == streamId}
-                <StreamPane streamId={streamId} hashes={hashes} />
+              {#if currentStream == streamId && $liveStreams[streamId]}
+                <StreamPane stream={$liveStreams[streamId]} hashes={hashes} />
               {/if}
             {/each}
           </div>
         </div>
         <div class="footer"
-          on:click={()=>aboutDialog.open()}
           >
-          <SvgIcon icon=zipzap></SvgIcon> Ephemeral Chat with ZipZap <SvgIcon icon=faCog></SvgIcon>
+          <span><SvgIcon  icon=zipzap></SvgIcon></span>
+           Ephemeral Chat with ZipZap 
+           <SvgIcon on:click={()=>aboutDialog.open()} icon=faCog></SvgIcon>
         </div>
             <!-- <div class="welcome-text">
               <div style="display:flex; flex-direction:column">
@@ -322,6 +380,7 @@
   }
   .person {
     display: flex;
+    align-items: center;
     padding:5px;
     cursor: pointer;
     user-select: none;
