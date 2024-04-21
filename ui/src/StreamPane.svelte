@@ -49,6 +49,11 @@
       return 0
     }
     let confirmDialog
+    const convertMessageText = (text:string) :string => {
+      let formatted = text.replace(/(https?:\/\/[^\s]+)/g, '<a style="text-decoration: underline;" href="$1">$1</a>');
+      formatted = formatted.replace(/(we:\/\/[^\s]+)/g, '<a style="text-decoration: underline;" href="$1">$1</a>');
+      return formatted
+    }
 </script>
 <Confirm 
     bind:this={confirmDialog}
@@ -91,7 +96,7 @@
             {#if !isMyMessage && showFrom}
               <agent-avatar style="margin-right:5px" disable-copy={true} size={20} agent-pub-key="{encodeHashToBase64(msg.from)}"></agent-avatar>
             {/if}
-            {msg.payload.text}
+            {@html convertMessageText(msg.payload.text)}
             <span title={`Received: ${new Date(msg.received).toLocaleTimeString()}`} class="msg-timestamp">{new Date(msg.payload.created).toLocaleTimeString()}</span>
             {#if isMyMessage}
               {@const ackCount = getAckCount($acks, msg.payload.created)}
@@ -157,6 +162,9 @@
     flex-shrink: 1;
     align-self: flex-start;
     background-color: rebeccapurple;
+  }
+  a {
+    text-decoration: underline;
   }
   .my-msg {
     border-radius: 15px 0px 15px 0px ;
