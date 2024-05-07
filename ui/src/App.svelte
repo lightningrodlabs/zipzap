@@ -2,7 +2,7 @@
   import Controller from './Controller.svelte'
   import ControllerCreate from './ControllerCreate.svelte'
   import ControllerThing from './ControllerThing.svelte'
-  import { AppWebsocket, AdminWebsocket } from '@holochain/client';
+  import { AppWebsocket, AdminWebsocket, type AppWebsocketConnectionOptions } from '@holochain/client';
   import '@shoelace-style/shoelace/dist/themes/light.css';
   import { WeClient, isWeContext, initializeHotReload, type Hrl, type WAL } from '@lightningrodlabs/we-applet';
   import "@holochain-open-dev/profiles/dist/elements/profiles-context.js";
@@ -59,7 +59,12 @@
           await adminWebsocket.authorizeSigningCredentials(cellIds[0])
         }
         console.log("appPort and Id is", appPort, appId)
-        client = await AppWebsocket.connect(appId, {url: new URL(url)})
+        try {
+          client = await AppWebsocket.connect({url: new URL(url)})
+        } catch(e) {
+          console.log("ERROR", e)
+        }
+        console.log("CLIENT", client)
         profilesClient = new ProfilesClient(client, appId);
     } 
     else {

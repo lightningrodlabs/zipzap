@@ -2,14 +2,11 @@
     import { ZipZapStore } from './store'
     import { setContext } from 'svelte';
     import { encodeHashToBase64, type AppClient } from '@holochain/client';
-    import type { SynStore } from '@holochain-syn/store';
     import type { ProfilesStore } from "@holochain-open-dev/profiles";
     import type { WeClient } from '@lightningrodlabs/we-applet';
-    import { SynClient } from '@holochain-syn/core';
     import { getMyDna } from './util';
     import '@shoelace-style/shoelace/dist/components/select/select.js';
     import '@shoelace-style/shoelace/dist/components/option/option.js';
-    import { cloneDeep } from "lodash";
 
     export let roleName = ""
     export let client : AppClient
