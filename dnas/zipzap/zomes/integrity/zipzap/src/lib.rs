@@ -57,18 +57,14 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         FlatOp::RegisterUpdate(update_entry) => {
             match update_entry {
                 OpUpdate::Entry {
-                    original_action,
-                    original_app_entry,
                     app_entry,
                     action,
                 } => {
-                    match (app_entry, original_app_entry) {
-                        (EntryTypes::Thing(space), EntryTypes::Thing(original_thing)) => {
+                    match (app_entry) {
+                        (EntryTypes::Thing(space)) => {
                             validate_update_thing(
                                 action,
                                 space,
-                                original_action,
-                                original_thing,
                             )
                         }
 
@@ -87,12 +83,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         }
         FlatOp::RegisterDelete(delete_entry) => {
             match delete_entry {
-                OpDelete::Entry { original_action, original_app_entry, action } => {
-                    match original_app_entry {
-                        EntryTypes::Thing(space) => {
-                            validate_delete_thing(action, original_action, space)
-                        }
-                    }
+                OpDelete { action } => {
+                    validate_delete_thing(action)
                 }
                 _ => Ok(ValidateCallbackResult::Valid),
             }
@@ -209,8 +201,6 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                 validate_update_thing(
                                     action,
                                     space,
-                                    original_action,
-                                    original_thing,
                                 )
                             } else {
                                 Ok(result)
@@ -270,11 +260,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match original_app_entry {
-                        EntryTypes::Thing(original_thing) => {
+                        EntryTypes::Thing(_original_thing) => {
                             validate_delete_thing(
                                 action,
-                                original_action,
-                                original_thing,
                             )
                         }
                     }

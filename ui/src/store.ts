@@ -1,5 +1,5 @@
 import {
-    type AppAgentClient,
+    type AppClient,
     type AgentPubKeyB64,
     type RoleName,
     encodeHashToBase64,
@@ -45,7 +45,7 @@ export type EntryTypes = string
 export type ZipZapSignal = ActionCommittedSignal<EntryTypes, Message>;
 
 export class ZipZapClient extends ZomeClient<ZipZapSignal> {
-    constructor(public client: AppAgentClient, public roleName, public zomeName = ZOME_NAME) {
+    constructor(public client: AppClient, public roleName, public zomeName = ZOME_NAME) {
         super(client, roleName, zomeName);
     }
 
@@ -188,7 +188,7 @@ export class ZipZapStore {
     constructor(
         public weClient : WeClient,
         public profilesStore: ProfilesStore,
-        protected clientIn: AppAgentClient,
+        protected clientIn: AppClient,
         protected roleName: RoleName,
         protected zomeName: string = ZOME_NAME
     ) {

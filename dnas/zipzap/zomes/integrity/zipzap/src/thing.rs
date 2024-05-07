@@ -13,15 +13,11 @@ pub fn validate_create_thing(
 pub fn validate_update_thing(
     _action: Update,
     _thing: Thing,
-    _original_action: EntryCreationAction,
-    _original_thing: Thing,
 ) -> ExternResult<ValidateCallbackResult> {
     Ok(ValidateCallbackResult::Valid)
 }
 pub fn validate_delete_thing(
     _action: Delete,
-    _original_action: EntryCreationAction,
-    _original_thing: Thing,
 ) -> ExternResult<ValidateCallbackResult> {
     Ok(ValidateCallbackResult::Valid)
 }

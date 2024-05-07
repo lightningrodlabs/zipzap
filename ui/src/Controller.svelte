@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ZipZapStore } from "./store";
   import { onMount, setContext } from "svelte";
-  import type { AppAgentClient, EntryHash } from "@holochain/client";
+  import type { AppClient, EntryHash } from "@holochain/client";
   import type { Profile, ProfilesStore } from "@holochain-open-dev/profiles";
   import SvgIcon from "./SvgIcon.svelte";
   import Avatar from "./Avatar.svelte";
@@ -16,7 +16,7 @@
   import {time} from "./util"
 
   export let roleName = "";
-  export let client: AppAgentClient;
+  export let client: AppClient;
   export let profilesStore: ProfilesStore;
   export let weClient : WeClient
 
