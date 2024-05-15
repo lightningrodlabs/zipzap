@@ -125,11 +125,6 @@
               {/if}
 
             </div>
-            {#each [1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10] as x}
-              <div class="person">
-                Fakeperson {x}
-              </div>
-            {/each}
             {#each allPeople as [hash,profile]}
               {@const hb64 = encodeHashToBase64(hash)}
               {@const thisUserStreamId = JSON.stringify([hash].concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())}

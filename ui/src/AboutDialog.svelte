@@ -12,7 +12,7 @@
 
 <svelte:window on:keydown={handleKeydown}/>
 
-<sl-dialog label="ZipZap!: UI v0.1.4 for DNA v0.1.x" bind:this={dialog} width={600} >
+<sl-dialog label="ZipZap!: UI v0.1.5 for DNA v0.1.x" bind:this={dialog} width={600} >
     <div class="about">
         <p>ZipZap is ephemeral chat.  Your messages are never stored.  Chat streams are defined by the people who are in them.
         </p>
