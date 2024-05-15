@@ -96,7 +96,7 @@
         <AboutDialog bind:this={aboutDialog} />
 
         <div class="main-pane">
-          <div class="people">
+          <div class="people flex-scrollable-y">
             <div style="height:30px; background-color: #eee;display:flex; justify-content:center;align-items:center;border-bottom: 1px solid lightgrey">
               <SvgIcon  icon=zipzap></SvgIcon> <span style="font-weight:bold;font-size:110%">Stream</span></div>
             <div class="person"
@@ -125,6 +125,11 @@
               {/if}
 
             </div>
+            {#each [1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10] as x}
+              <div class="person">
+                Fakeperson {x}
+              </div>
+            {/each}
             {#each allPeople as [hash,profile]}
               {@const hb64 = encodeHashToBase64(hash)}
               {@const thisUserStreamId = JSON.stringify([hash].concat(store.myAgentPubKey).map(h=> encodeHashToBase64(h)).sort())}
@@ -386,8 +391,8 @@
   .people {
     display:flex;
     flex-direction: column;
-    height: 100%;
-    
+    height: 94vh;
+    overflow-y: auto;
   }
   .person {
     display: flex;
