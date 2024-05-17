@@ -386,7 +386,7 @@
   .people {
     display:flex;
     flex-direction: column;
-    height: 94vh;
+    height: calc(100vh-50px);
     overflow-y: auto;
   }
   .person {
