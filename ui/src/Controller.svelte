@@ -7,7 +7,7 @@
   import Avatar from "./Avatar.svelte";
   import StreamPane from "./StreamPane.svelte";
   import ThingItem from "./ThingItem.svelte";
-  import type { WeClient } from "@lightningrodlabs/we-applet";
+  import type { WeaveClient } from "@lightningrodlabs/we-applet";
   import { decodeHashFromBase64, encodeHashToBase64 } from "@holochain/client";
   import type { AgentPubKey } from "@holochain/client";
   import { EntryRecord, HoloHashMap } from "@holochain-open-dev/utils";
@@ -18,7 +18,7 @@
   export let roleName = "";
   export let client: AppClient;
   export let profilesStore: ProfilesStore;
-  export let weClient : WeClient
+  export let weaveClient : WeaveClient
 
   let aboutDialog
 
@@ -28,7 +28,7 @@
   }
 
   let store: ZipZapStore = new ZipZapStore(
-    weClient,
+    weaveClient,
     profilesStore,
     client,
     roleName,

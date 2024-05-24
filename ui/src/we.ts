@@ -1,5 +1,5 @@
 
-import type { AppletHash, AppletServices, AssetInfo, WAL, WeServices } from '@lightningrodlabs/we-applet';
+import type { AppletHash, AppletServices, AssetInfo, RecordInfo, WAL, WeaveServices } from '@lightningrodlabs/we-applet';
 import type { AppClient, RoleName, ZomeName } from '@holochain/client';
 import { getMyDna } from './util';
 
@@ -22,21 +22,26 @@ export const appletServices: AppletServices = {
 
     getAssetInfo: async (
       appletClient: AppClient,
-      roleName: RoleName,
-      integrityZomeName: ZomeName,
-      entryType: string,
-      wal: WAL
+      wal: WAL,
+      recordInfo: RecordInfo,
     ): Promise<AssetInfo | undefined> => {
-
+      if (!recordInfo) {
         return {
           icon_src: `data:image/svg+xml;utf8,${ICON}`,
           name: "thing",
         };
+      }
+      else {
+        return {
+          icon_src: `data:image/svg+xml;utf8,${ICON}`,
+          name: "thing",
+        };
+      }
     },
     search: async (
       appletClient: AppClient,
       appletHash: AppletHash,
-      weServices: WeServices,
+      weServices: WeaveServices,
       searchFilter: string
     ): Promise<Array<WAL>> => {
       return []

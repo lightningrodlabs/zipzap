@@ -4,17 +4,17 @@
   import type { AppClient, EntryHash } from "@holochain/client";
   import type { SynStore } from "@holochain-syn/store";
   import type { ProfilesStore } from "@holochain-open-dev/profiles";
-  import type { WeClient } from "@lightningrodlabs/we-applet";
+  import type { WeaveClient } from "@lightningrodlabs/we-applet";
 
 
   export let roleName = "";
   export let client: AppClient;
   export let profilesStore: ProfilesStore;
-  export let weClient : WeClient
+  export let weaveClient : WeaveClient
   export let thing : EntryHash
 
   let store: ZipZapStore = new ZipZapStore(
-    weClient,
+    weaveClient,
     profilesStore,
     client,
     roleName,
