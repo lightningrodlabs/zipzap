@@ -42,18 +42,18 @@ export default defineConfig({
         },
       ],
       applets: [
-        // {
-        //   name: 'ZipZap Hot Reload',
-        //   instanceName: 'ZipZap Hot Reload',
-        //   registeringAgent: 1,
-        //   joiningAgents: [2,3],
-        // },
-        // {
-        //   name: 'kando',
-        //   instanceName: 'kando',
-        //   registeringAgent: 1,
-        //   joiningAgents: [2,3],
-        // },
+        {
+          name: 'ZipZap Hot Reload',
+          instanceName: 'ZipZap Hot Reload',
+          registeringAgent: 1,
+          joiningAgents: [2,3],
+        },
+        {
+          name: 'kando',
+          instanceName: 'kando',
+          registeringAgent: 1,
+          joiningAgents: [2,3],
+        },
         // {
         //   name: 'notebooks',
         //   instanceName: 'notebooks',
@@ -64,33 +64,33 @@ export default defineConfig({
     },
   ],
   applets: [
-    // {
-    //   name: 'ZipZap Hot Reload',
-    //   subtitle: 'games',
-    //   description: 'play it!',
-    //   icon: {
-    //     type: 'filesystem',
-    //     path: './we_dev/zipzap_icon.svg',
-    //   },
-    //   source: {
-    //     type: 'localhost',
-    //     happPath: './workdir/zipzap.happ',
-    //     uiPort: 8888,
-    //   },
-    // },
-    // {
-    //     name: 'kando',
-    //     subtitle: 'kanban boards',
-    //     description: 'Real-time kanban boards based on syn',
-    //     icon: {
-    //       type: "https",
-    //       url: "https://raw.githubusercontent.com/holochain-apps/kando/main/we_dev/kando_icon.png"
-    //     },
-    //     source: {
-    //       type: "https",
-    //       url: "https://github.com/holochain-apps/kando/releases/download/v0.10.0-dev1/kando.webhapp"
-    //     },
-    //   },
+    {
+      name: 'ZipZap Hot Reload',
+      subtitle: 'games',
+      description: 'play it!',
+      icon: {
+        type: 'filesystem',
+        path: './we_dev/zipzap_icon.svg',
+      },
+      source: {
+        type: 'localhost',
+        happPath: './workdir/zipzap.happ',
+        uiPort: 8888,
+      },
+    },
+    {
+        name: 'kando',
+        subtitle: 'kanban boards',
+        description: 'Real-time kanban boards based on syn',
+        icon: {
+          type: "https",
+          url: "https://raw.githubusercontent.com/holochain-apps/kando/main/we_dev/kando_icon.png"
+        },
+        source: {
+          type: "https",
+          url: "https://github.com/holochain-apps/kando/releases/download/v0.10.0-dev1/kando.webhapp"
+        },
+      },
     //   {
     //   name: 'notebooks',
     //   subtitle: 'Collaborative note taking',

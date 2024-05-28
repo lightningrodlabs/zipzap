@@ -4,7 +4,7 @@
   import { get } from "svelte/store";
   import SvgIcon from "./SvgIcon.svelte";
   import Confirm from "./Confirm.svelte";
-  import { isWeContext } from "@lightningrodlabs/we-applet";
+  import { isWeContext, type WAL } from "@lightningrodlabs/we-applet";
   import type { ZipZapStore } from "./store";
   import { encodeHashToBase64 } from "@holochain/client";
   import type { Stream, Payload } from "./stream";
@@ -16,10 +16,17 @@
 
   export let hashes: Array<AgentPubKey>;
   export let stream: Stream;
+  export let standalone = false;
 
   const showFrom = stream.id == "_all" || JSON.parse(stream.id).length > 2;
   const dispatch = createEventDispatcher();
 
+  const walToPocket = () => {
+    const nullHash = new Uint8Array(39)
+    const attachment: WAL = { hrl: [store.dnaHash, nullHash], context: stream.id }
+    store.weaveClient?.walToPocket(attachment)
+  }
+  
   //@ts-ignore
   $: myProfile = get(store.profilesStore.myProfile).value;
 
@@ -83,20 +90,22 @@
     <div style="display:flex; align-items: center">
       {#if isWeContext()}
         <sl-button
-          on:click={() => confirmDialog.open()}
+          on:click={()=>walToPocket() }
           style="margin-top: 5px;margin-right: 5px"
           title="Add to Pocket"
           circle
-          size="small"><SvgIcon icon="addToPocket" size="10" /></sl-button
+          size="small"><SvgIcon icon="addToPocket" size="20" /></sl-button
         >
       {/if}
-      <sl-button
-        on:click={() => confirmDialog.open()}
-        style="margin-top: 5px;margin-right: 5px"
-        title="Zap"
-        circle
-        size="small"><SvgIcon icon="faClose" size="10" /></sl-button
-      >
+      {#if !standalone}
+        <sl-button
+          on:click={() => confirmDialog.open()}
+          style="margin-top: 5px;margin-right: 5px"
+          title="Zap"
+          circle
+          size="small"><SvgIcon icon="faClose" size="10" /></sl-button
+        >
+      {/if}
 
       <!-- {#each hashes as hash}
         {@const hb64 = encodeHashToBase64(hash)}

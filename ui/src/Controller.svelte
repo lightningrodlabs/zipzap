@@ -388,6 +388,7 @@
     flex-direction: column;
     height: calc(100vh-50px);
     overflow-y: auto;
+    min-width: 125px;
   }
   .person {
     display: flex;

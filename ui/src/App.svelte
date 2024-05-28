@@ -1,7 +1,6 @@
 <script lang="ts">
   import Controller from './Controller.svelte'
-  import ControllerCreate from './ControllerCreate.svelte'
-  import ControllerThing from './ControllerThing.svelte'
+  import ControllerStream from './ControllerStream.svelte'
   import { AppWebsocket, AdminWebsocket, type AppClient, type AppWebsocketConnectionOptions } from '@holochain/client';
   import '@shoelace-style/shoelace/dist/themes/light.css';
   import { WeaveClient, isWeContext, initializeHotReload, type Hrl, type WAL } from '@lightningrodlabs/we-applet';
@@ -27,8 +26,7 @@
   let createView
   enum RenderType {
     App,
-    Thing,
-    CreateBoard,
+    Stream,
   }
 
   let renderType = RenderType.App
@@ -81,38 +79,15 @@
               }
             case "asset":
               if (!weaveClient.renderInfo.view.recordInfo) {
-                    throw new Error(
-                      "Talking-Stickies does not implement asset views pointing to DNAs instead of Records."
-                    );
+                renderType = RenderType.Stream
+                wal = weaveClient.renderInfo.view.wal
               } else {
-                switch (weaveClient.renderInfo.view.recordInfo.roleName) {
-                  case "zipzap":
-                    switch (weaveClient.renderInfo.view.recordInfo.integrityZomeName) {
-                      case "zipzap_integrity":
-                        switch (weaveClient.renderInfo.view.recordInfo.entryType) {
-                          case "thing":
-                            renderType = RenderType.Thing
-                            wal = weaveClient.renderInfo.view.wal
-                            break;
-                          default:
-                            throw new Error("Unknown entry type:"+weaveClient.renderInfo.view.recordInfo.entryType);
-                        }
-                        break;
-                      default:
-                        throw new Error("Unknown integrity zome:"+weaveClient.renderInfo.view.recordInfo.integrityZomeName);
-                    }
-                    break;
-                  default:
-                    throw new Error("Unknown role name:"+weaveClient.renderInfo.view.recordInfo.roleName);
-                }
+                throw new Error(
+                      "ZipZap has no entries"
+                    );
               }
               break;
             case "creatable":
-              switch (weaveClient.renderInfo.view.name) {
-                case "game":
-                  renderType = RenderType.CreateBoard
-                  createView = weaveClient.renderInfo.view
-              }              
               break;
             default:
               throw new Error("Unsupported applet-view type");
@@ -161,12 +136,10 @@
         ></create-profile>
       </div>
     {:else}
-      {#if renderType== RenderType.CreateBoard}
-        <ControllerCreate  view={createView} client={client} weaveClient={weaveClient} profilesStore={profilesStore} roleName={roleName}></ControllerCreate>
-      {:else if renderType== RenderType.App}
+      {#if renderType== RenderType.App}
         <Controller  client={client} weaveClient={weaveClient} profilesStore={profilesStore} roleName={roleName}></Controller>
-      {:else if  renderType== RenderType.Thing}
-        <ControllerThing  thing={wal.hrl[1]} client={client} weaveClient={weaveClient} profilesStore={profilesStore} roleName={roleName}></ControllerThing>
+      {:else if  renderType== RenderType.Stream}
+        <ControllerStream  streamId={wal.context} client={client} weaveClient={weaveClient} profilesStore={profilesStore} roleName={roleName}></ControllerStream>
       {/if}
     {/if}
 
