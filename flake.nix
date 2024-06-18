@@ -2,10 +2,9 @@
   description = "Template for Holochain app development";
 
   inputs = {
-    holochain-nix-versions.url  = "github:holochain/holochain/holochain-0.4.0-dev.1/?dir=versions/weekly";
+    holochain-nix-versions.url  = "github:holochain/holochain/?dir=versions/0_3";
     holochain-flake = {
-      url = "github:holochain/holochain/holochain-0.4.0-dev.1";
-      inputs.holochain.url = "github:holochain/holochain/holochain-0.4.0-dev.1";
+      url = "github:holochain/holochain";
       inputs.versions.follows = "holochain-nix-versions";
     };
 
@@ -32,4 +31,4 @@
             };
           };
       };
-}   
+}
