@@ -1,3 +1,4 @@
+import type { ProfilesClient } from "@holochain-open-dev/profiles";
 import { type AppClient, type EntryHash, type DnaHash, CellType } from "@holochain/client";
 import { readable } from "svelte/store";
 
@@ -5,6 +6,12 @@ import { readable } from "svelte/store";
 // know how to get around the error messages
 export const APP_VERSION = __APP_VERSION__
 export type WALUrl = string
+
+export let PROFILES_CLIENT : ProfilesClient | undefined
+
+export const setProfilesClient = (client: ProfilesClient) => {
+  PROFILES_CLIENT = client
+}
 
 export const hashEqual = (a:EntryHash, b:EntryHash) : boolean => {
   if (!a || !b) {

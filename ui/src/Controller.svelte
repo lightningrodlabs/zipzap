@@ -14,6 +14,7 @@
   import "@holochain-open-dev/profiles/dist/elements/agent-avatar.js";
   import AboutDialog from "./AboutDialog.svelte";
   import {time} from "./util"
+  import { allRevisionsOfEntryStore } from "@holochain-open-dev/stores";
 
   export let roleName = "";
   export let client: AppClient;
@@ -174,9 +175,12 @@
             <div style="width:100%;height:1px;border-top:solid 1px lightgrey"></div>
             {#each Object.values($liveStreams) as stream}
               {#if stream.id != "_all" && $lastActivity[stream.id]}
-                {@const streamAgents = JSON.parse(stream.id).filter(a=>a!=store.myAgentPubKeyB64)}
+                {@const allStreamAgents = JSON.parse(stream.id)}
+                {@const streamAgents = allStreamAgents.filter(a=>a!=store.myAgentPubKeyB64)}
                 {@const selected = currentStream == stream.id}
-                {#if streamAgents.length > 1}
+                {#if allStreamAgents.length == streamAgents.length}
+                  <p style="margin:auto">This stream doesn't include you!</p>
+                {:else if streamAgents.length > 1}
                   <div style="padding=5px;display:flex; flex-wrap:wrap; justify-content:end; padding:5px;"
 
                     on:click={(e)=>{

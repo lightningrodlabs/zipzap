@@ -1,95 +1,120 @@
 <script lang="ts">
   import { ZipZapStore } from "./store";
   import { onMount, setContext } from "svelte";
-  import { encodeHashToBase64,decodeHashFromBase64, type AppClient, type EntryHash } from "@holochain/client";
+  import {
+    encodeHashToBase64,
+    decodeHashFromBase64,
+    type AppClient,
+    type EntryHash,
+  } from "@holochain/client";
   import type { Profile, ProfilesStore } from "@holochain-open-dev/profiles";
   import type { WeaveClient } from "@lightningrodlabs/we-applet";
   import StreamPane from "./StreamPane.svelte";
   import type { EntryRecord } from "@holochain-open-dev/utils";
 
-
   export let roleName = "";
   export let client: AppClient;
   export let profilesStore: ProfilesStore;
-  export let weaveClient : WeaveClient
-  export let streamId: string
+  export let weaveClient: WeaveClient;
+  export let streamId: string;
 
-  $: allProfiles = store.profilesStore.allProfiles
-  $: allPeople = $allProfiles.status=== "complete" ? getAllPeople($allProfiles.value) : []
+  $: allProfiles = store.profilesStore.allProfiles;
+  $: allPeople =
+    $allProfiles.status === "complete" ? getAllPeople($allProfiles.value) : [];
 
-
-  $:liveStreams = store.streams
+  $: liveStreams = store.streams;
 
   let store: ZipZapStore = new ZipZapStore(
     weaveClient,
     profilesStore,
     client,
-    roleName,
+    roleName
   );
 
   setContext("store", {
     getStore: () => store,
   });
 
-  const getAllPeople = (allProfiles:ReadonlyMap<Uint8Array, EntryRecord<Profile>>) => {
-    const people = Array.from(allProfiles.entries()).filter(([agent,p])=>encodeHashToBase64(agent) != store.myAgentPubKeyB64)
-    return people
-
-  }
+  const getAllPeople = (
+    allProfiles: ReadonlyMap<Uint8Array, EntryRecord<Profile>>
+  ) => {
+    const people = Array.from(allProfiles.entries()).filter(
+      ([agent, p]) => encodeHashToBase64(agent) != store.myAgentPubKeyB64
+    );
+    return people;
+  };
 
   const hashes = () => {
     if (streamId === "_all") {
-      return allPeople
+      return allPeople;
     } else {
-      return JSON.parse(streamId).filter(a=> a!= store.myAgentPubKeyB64).map(a=>decodeHashFromBase64(a))
+      return JSON.parse(streamId)
+        .filter((a) => a != store.myAgentPubKeyB64)
+        .map((a) => decodeHashFromBase64(a));
     }
-  }
+  };
 
-  const getNickname = (people:any, aB64: string) => {
+  const getNickname = (people: any, aB64: string) => {
     if (people) {
-      const idx= people.findIndex(([h,_])=> (h && encodeHashToBase64(h) == aB64))
-      if (idx>=0) {
-        return allPeople[idx][1].entry.nickname
+      const idx = people.findIndex(
+        ([h, _]) => h && encodeHashToBase64(h) == aB64
+      );
+      if (idx >= 0) {
+        return allPeople[idx][1].entry.nickname;
       }
     }
-    return "unknown"
-  }
+    return "unknown";
+  };
 
-  onMount(()=> {
+  onMount(() => {
     if (!$liveStreams[streamId]) {
-                      store.newStream(streamId)
-                    }
-  })
-
+      store.newStream(streamId);
+    }
+  });
 </script>
 
 <div class="flex-scrollable-parent">
   <div class="flex-scrollable-container">
     <div class="app">
       <div class="main-pane">
-
-      {#if store && $liveStreams[streamId]}
-      <div class="whom">
-
-        {#if streamId === "_all"}
-          Everybody
-        {:else} 
-          {@const streamAgents = JSON.parse(streamId).filter(a=>a!=store.myAgentPubKeyB64)}
-          {#each streamAgents as aB64}
-            <agent-avatar class:disable-ptr-events={true} disable-tooltip={true} disable-copy={true} size={20} agent-pub-key="{aB64}"></agent-avatar>
-            <span style="margin-left:5px">{getNickname(allPeople, aB64)}</span>
-
-          {/each}
+        {#if store && $liveStreams[streamId]}
+          {@const allStreamAgents = JSON.parse(streamId)}
+          {@const streamAgents = allStreamAgents.filter(
+            (a) => a != store.myAgentPubKeyB64
+          )}
+          {#if allStreamAgents.length == streamAgents.length}
+            <p style="margin:auto">This stream doesn't include you!</p>
+          {:else}
+            <div class="whom">
+              {#if streamId === "_all"}
+                Everybody
+              {:else}
+                {#each streamAgents as aB64}
+                  <agent-avatar
+                    class:disable-ptr-events={true}
+                    disable-tooltip={true}
+                    disable-copy={true}
+                    size={20}
+                    agent-pub-key={aB64}
+                  ></agent-avatar>
+                  <span style="margin-left:5px"
+                    >{getNickname(allPeople, aB64)}</span
+                  >
+                {/each}
+              {/if}
+            </div>
+            <div class="stream">
+              <StreamPane
+                standalone={true}
+                stream={$liveStreams[streamId]}
+                hashes={hashes()}
+              />
+            </div>
+          {/if}
+        {:else}
+          <div class="loading"><div class="loader" /></div>
         {/if}
       </div>
-      <div class="stream">
-
-        <StreamPane standalone={true} stream={$liveStreams[streamId]} hashes={hashes()} />
-      </div>
-      {:else}
-        <div class="loading"><div class="loader" /></div>
-      {/if}
-      </div> 
     </div>
   </div>
 </div>
@@ -105,7 +130,6 @@
     min-height: 0;
     height: 100vh;
   }
-
 
   :global(:root) {
     --resizeable-height: 200px;
@@ -161,17 +185,17 @@
     bottom: 0;
   }
   .stream {
-    display:flex;
-    width:100%;
+    display: flex;
+    width: 100%;
     height: 100%;
   }
   .main-pane {
-    display:flex;
+    display: flex;
     flex: 1;
     flex-direction: column;
   }
   .whom {
-    display:flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     background-color: lightgoldenrodyellow;

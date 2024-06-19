@@ -10,6 +10,7 @@
   import { ProfilesClient, ProfilesStore } from '@holochain-open-dev/profiles';
   import LogoIcon from "./icons/LogoIcon.svelte";
   import { appletServices } from './we';
+  import { setProfilesClient } from './util';
 
   const appId = import.meta.env.VITE_APP_ID ? import.meta.env.VITE_APP_ID : 'zipzap'
   const roleName = 'zipzap'
@@ -115,6 +116,7 @@
       //@ts-ignore
       profilesClient = weaveClient.renderInfo.profilesClient;
     }
+    setProfilesClient(profilesClient)
     profilesStore = new ProfilesStore(profilesClient);
     connected = true
   }

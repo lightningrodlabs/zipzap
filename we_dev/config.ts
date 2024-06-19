@@ -74,7 +74,7 @@ export default defineConfig({
       },
       source: {
         type: 'localhost',
-        happPath: './workdir/zipzap.happ',
+        happPath: '/home/eric/code/metacurrency/holochain/zipzap/workdir/zipzap.happ',
         uiPort: 8888,
       },
     },

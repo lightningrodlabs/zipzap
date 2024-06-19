@@ -1,9 +1,12 @@
 
 import type { AppletHash, AppletServices, AssetInfo, RecordInfo, WAL, WeaveServices } from '@lightningrodlabs/we-applet';
-import type { AppClient } from '@holochain/client';
+import { decodeHashFromBase64, type AppClient } from '@holochain/client';
 import { getMyDna } from './util';
+import { ProfilesClient } from '@holochain-open-dev/profiles';
+import { toPromise } from '@holochain-open-dev/stores';
+import { PROFILES_CLIENT} from './util'
 
-const ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="enable-background:new 0 0 64 64" xml:space="preserve"><path d="M6 12c0-3.3 2.7-6 6-6h40c3.3 0 6 2.7 6 6v40c0 3.3-2.7 6-6 6H12c-3.3 0-6-2.7-6-6V12z" style="fill:%23fff"/><path d="M4 12c0-4.4 3.6-8 8-8h8v16H8v12h12v12H8v2c0 2.8 5.1 5.1 12 5.8V44h12v7.4c4.4-.7 8.5-2 12-3.8V44h5.6c4-3.3 6.4-7.5 6.4-12h2v20c0 3.3-2.7 6-6 6h-8v2H12c-4.4 0-8-3.6-8-8V12zm28 20v12h12V32H32zm12 0h12V20H44v12zm0-12V8H32v12h12zm-12 0H20v12h12V20z" style="fill:%23acbdc5"/><path d="M32 56H20v-4.2c1.3.1 2.6.2 4 .2 2.8 0 5.4-.2 8-.6V56zm12-8.4V56h12V44h-6.4c-1.6 1.3-3.5 2.6-5.6 3.6z" style="fill:%23597380"/><path d="M20 4h32c4.4 0 8 3.6 8 8v40c0 4.4-3.6 8-8 8h-8v-4h8c2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4H20V4z" style="fill-rule:evenodd;clip-rule:evenodd;fill:%23314a52"/></svg>'
+const ICON = '<svg width="800px" height="800px" viewBox="0 0 24 24" fill="yellow" xmlns="http://www.w3.org/2000/svg"><path d="M9 17.5H3.5M6.5 12H2M9 6.5H4M17 3L10.4036 12.235C10.1116 12.6438 9.96562 12.8481 9.97194 13.0185C9.97744 13.1669 10.0486 13.3051 10.1661 13.3958C10.3011 13.5 10.5522 13.5 11.0546 13.5H16L15 21L21.5964 11.765C21.8884 11.3562 22.0344 11.1519 22.0281 10.9815C22.0226 10.8331 21.9514 10.6949 21.8339 10.6042C21.6989 10.5 21.4478 10.5 20.9454 10.5H16L17 3Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
 
 export const appletServices: AppletServices = {
     // Types of attachment that this Applet offers for other Applets to be created
@@ -26,9 +29,24 @@ export const appletServices: AppletServices = {
       recordInfo: RecordInfo,
     ): Promise<AssetInfo | undefined> => {
       if (!recordInfo) {
+        let name = "Everybody"
+        if (wal.context !== "_all") {
+          const members = JSON.parse(wal.context)
+          const names = []
+          if (PROFILES_CLIENT) {
+            for (const m of members) {
+              const key = decodeHashFromBase64(m)
+              const profile = await PROFILES_CLIENT.getAgentProfile(key)
+              names.push(profile.entry.nickname)
+            }
+          } else {
+              names.push(`${members.length} member stream`)
+          }
+          name = `${names.join(", ")}`
+        }
         return {
           icon_src: `data:image/svg+xml;utf8,${ICON}`,
-          name: "stream",
+          name,
         };
       }
       else {
