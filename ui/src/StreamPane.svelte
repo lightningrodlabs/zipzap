@@ -47,7 +47,8 @@
       type: "Msg",
       text: inputElement.value,
       created: Date.now(),
-    };
+    }
+    console.log("SENDING TO",hashes)
     await store.sendMessage(stream.id, payload, hashes);
     inputElement.value = "";
   };

@@ -74,7 +74,7 @@ export default defineConfig({
       },
       source: {
         type: 'localhost',
-        happPath: '/home/eric/code/metacurrency/holochain/zipzap/workdir/zipzap.happ',
+        happPath: './workdir/zipzap.happ',
         uiPort: 8888,
       },
     },
@@ -88,7 +88,7 @@ export default defineConfig({
         },
         source: {
           type: "https",
-          url: "https://github.com/holochain-apps/kando/releases/download/v0.10.0/kando.webhapp"
+          url: "https://github.com/holochain-apps/kando/releases/download/v0.10.2/kando.webhapp"
         },
       },
     //   {

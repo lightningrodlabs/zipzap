@@ -11,6 +11,7 @@
   import type { WeaveClient } from "@lightningrodlabs/we-applet";
   import StreamPane from "./StreamPane.svelte";
   import type { EntryRecord } from "@holochain-open-dev/utils";
+  import { mdiAlertPlusOutline } from "@mdi/js";
 
   export let roleName = "";
   export let client: AppClient;
@@ -19,8 +20,6 @@
   export let streamId: string;
 
   $: allProfiles = store.profilesStore.allProfiles;
-  $: allPeople =
-    $allProfiles.status === "complete" ? getAllPeople($allProfiles.value) : [];
 
   $: liveStreams = store.streams;
 
@@ -35,18 +34,18 @@
     getStore: () => store,
   });
 
-  const getAllPeople = (
+  const getAllStreamProfiles = (
     allProfiles: ReadonlyMap<Uint8Array, EntryRecord<Profile>>
   ) => {
-    const people = Array.from(allProfiles.entries()).filter(
+    const profiles = Array.from(allProfiles.entries()).filter(
       ([agent, p]) => encodeHashToBase64(agent) != store.myAgentPubKeyB64
     );
-    return people;
+    return profiles;
   };
 
-  const hashes = () => {
+  const hashes = (streamProfiles:[Uint8Array, EntryRecord<Profile>][]) => {
     if (streamId === "_all") {
-      return allPeople;
+      return streamProfiles.map(([k,_])=>k);
     } else {
       return JSON.parse(streamId)
         .filter((a) => a != store.myAgentPubKeyB64)
@@ -54,13 +53,13 @@
     }
   };
 
-  const getNickname = (people: any, aB64: string) => {
-    if (people) {
-      const idx = people.findIndex(
+  const getNickname = (streamProfiles: [Uint8Array, EntryRecord<Profile>][], aB64: string) => {
+    if (streamProfiles) {
+      const idx = streamProfiles.findIndex(
         ([h, _]) => h && encodeHashToBase64(h) == aB64
       );
       if (idx >= 0) {
-        return allPeople[idx][1].entry.nickname;
+        return streamProfiles[idx][1].entry.nickname;
       }
     }
     return "unknown";
@@ -77,19 +76,18 @@
   <div class="flex-scrollable-container">
     <div class="app">
       <div class="main-pane">
-        {#if store && $liveStreams[streamId]}
-          {@const allStreamAgents = JSON.parse(streamId)}
-          {@const streamAgents = allStreamAgents.filter(
-            (a) => a != store.myAgentPubKeyB64
-          )}
-          {#if allStreamAgents.length == streamAgents.length}
+        {#if store && $liveStreams[streamId] && $allProfiles.status === "complete"}
+          {@const streamProfiles = getAllStreamProfiles($allProfiles.value)}
+          {@const allAgentKeys = hashes(streamProfiles)} 
+          {#if streamId !== "_all" && Array.from($allProfiles.value.keys()).findIndex(k=>encodeHashToBase64(k) === store.myAgentPubKeyB64) == -1}
             <p style="margin:auto">This stream doesn't include you!</p>
           {:else}
             <div class="whom">
               {#if streamId === "_all"}
                 Everybody
               {:else}
-                {#each streamAgents as aB64}
+                {#each allAgentKeys as key}
+                  {@const aB64 = encodeHashToBase64(key)}
                   <agent-avatar
                     class:disable-ptr-events={true}
                     disable-tooltip={true}
@@ -98,7 +96,7 @@
                     agent-pub-key={aB64}
                   ></agent-avatar>
                   <span style="margin-left:5px"
-                    >{getNickname(allPeople, aB64)}</span
+                    >{getNickname(streamProfiles, aB64)}</span
                   >
                 {/each}
               {/if}
@@ -107,7 +105,7 @@
               <StreamPane
                 standalone={true}
                 stream={$liveStreams[streamId]}
-                hashes={hashes()}
+                hashes={allAgentKeys}
               />
             </div>
           {/if}
