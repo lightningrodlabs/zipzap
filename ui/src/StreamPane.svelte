@@ -1,6 +1,6 @@
 <script lang="ts">
   import "@shoelace-style/shoelace/dist/components/button/button.js";
-  import { createEventDispatcher, getContext, onMount } from "svelte";
+  import { createEventDispatcher, getContext, onDestroy, onMount } from "svelte";
   import { get } from "svelte/store";
   import SvgIcon from "./SvgIcon.svelte";
   import Confirm from "./Confirm.svelte";
@@ -10,6 +10,7 @@
   import type { Stream, Payload } from "./stream";
   import type { AgentPubKey } from "@holochain/client";
   import type { HoloHashMap } from "@holochain-open-dev/utils";
+	import { debounce } from 'lodash-es';
 
   const { getStore }: any = getContext("store");
   const store: ZipZapStore = getStore();
@@ -26,15 +27,18 @@
     const attachment: WAL = { hrl: [store.dnaHash, nullHash], context: stream.id }
     store.weaveClient?.walToPocket(attachment)
   }
-  
+  const SCROLL_THRESHOLD = 100; // How close to the bottom must the user be to consider it "at the bottom"
+
   //@ts-ignore
   $: myProfile = get(store.profilesStore.myProfile).value;
 
   onMount(async () => {
-    // if (!myName) {
-    //     editAvatarDialog.open()
-    // }
+    conversationContainer.addEventListener('scroll', handleScroll);
   });
+  onDestroy(() => {
+    conversationContainer.removeEventListener('scroll', handleScroll);
+  })
+
   $: messages = stream.messages;
   $: acks = stream.acks;
   $: lastSeen = store.lastSeen;
@@ -74,6 +78,28 @@
     );
     return formatted;
   };
+
+  let conversationContainer: HTMLElement;
+
+  let scrollAtBottom = true
+    // Reactive update to scroll to the bottom every time the messages update,
+  // but only if the user is near the bottom already
+  $: if ($messages && $messages.length > 0) {
+    if (scrollAtBottom) {
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  const handleScroll = debounce(() => {
+    scrollAtBottom = conversationContainer.scrollHeight - conversationContainer.scrollTop <= conversationContainer.clientHeight + SCROLL_THRESHOLD;
+  }, 100)
+
+  function scrollToBottom() {
+    if (conversationContainer) {
+      conversationContainer.scrollTop = conversationContainer.scrollHeight;
+      scrollAtBottom = true
+    }
+  }
 </script>
 
 <Confirm
@@ -116,7 +142,7 @@
       {/each} -->
     </div>
   </div>
-  <div class="stream">
+  <div class="stream" bind:this={conversationContainer}>
     {#each $messages as msg}
       {@const isMyMessage =
         encodeHashToBase64(msg.from) == store.myAgentPubKeyB64}
