@@ -13,10 +13,12 @@
 
 <svelte:window on:keydown={handleKeydown}/>
 
-<sl-dialog label="ZipZap!: UI {APP_VERSION} for DNA v0.1.0" bind:this={dialog} width={600} >
+<sl-dialog label="ZipZap!" bind:this={dialog} width={600} >
     <div class="about">
         <p>ZipZap is ephemeral chat.  Your messages are never stored.  Chat streams are defined by the people who are in them.
         </p>
+        <!-- svelte-ignore missing-declaration -->
+        <p><b>Version:</b> UI {__APP_VERSION__}; DNA {__DNA_VERSION__}</p>
         <p> <b>Developers:</b>
             Check out this hApp's source-code <a href="https://github.com/lightningrodlabs/zipzap">in our github repo</a>.
         </p>
@@ -35,5 +37,9 @@
      .small {
         font-size: 80%;
     }
+    a {
+        text-decoration:underline
+    }
+
 </style>
   
