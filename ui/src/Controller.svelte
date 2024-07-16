@@ -100,7 +100,7 @@
           <div class="people flex-scrollable-y">
             <div style="height:30px; background-color: #eee;display:flex; justify-content:center;align-items:center;border-bottom: 1px solid lightgrey">
               <SvgIcon  icon=zipzap></SvgIcon> <span style="font-weight:bold;font-size:110%">Stream</span></div>
-            <div class="person"
+              <div class="person"
               class:selected={currentStream == "_all"}
               on:click={()=>{
                 if (streams[currentStream])
@@ -390,7 +390,7 @@
   .people {
     display:flex;
     flex-direction: column;
-    height: calc(100vh-50px);
+    height: calc(100vh - 50px);
     overflow-y: auto;
     min-width: 125px;
   }

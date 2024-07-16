@@ -100,6 +100,8 @@
       scrollAtBottom = true
     }
   }
+
+  let showRecipients = 0
 </script>
 
 <Confirm
@@ -167,7 +169,32 @@
             {#if ackCount == hashes.length}
               ✓
             {:else if hashes.length > 1}
-              <span class="ack-count">{ackCount}</span>
+              <span class="ack-count"
+              on:mouseover={() => {
+                if (showRecipients !== msg.payload.created) {
+                  showRecipients = msg.payload.created;
+                }
+              }}
+              >{ackCount}</span>
+              <div
+        class="msg-recipients"
+        on:mouseleave={() => {
+          showRecipients = 0;
+        }}
+      >
+      {#if showRecipients === msg.payload.created}
+        <div class="msg-recipients-title" style="margin-bottom: 2px;">{'received by:'}</div>
+        <div style="display:flex;flex-direction:row; flex-wrap: wrap;">
+          {#each Array.from($acks[msg.payload.created].keys()) as agent}
+              <agent-avatar
+                style="margin-left: 2px; margin-bottom: 2px;"
+                size={18}
+                agent-pub-key={encodeHashToBase64(agent)}
+              ></agent-avatar>,
+          {/each}
+        </div>
+      {/if}
+      </div>
             {/if}
           {/if}
         {/if}
@@ -220,6 +247,7 @@
     height: 0px;
   }
   .msg {
+    position: relative;
     display: flex;
     margin: 5px;
     border-radius: 0px 15px 0px 15px;
@@ -261,5 +289,23 @@
   }
   .person-inactive {
     opacity: 0.5;
+  }
+  .msg-recipients {
+    z-index: 1;
+    align-items: flex-end;
+    position: absolute;
+    top: 2px;
+    right: 14px;
+    background-color: #f3ff3b;
+    margin-top: 5px;
+    padding: 5px;
+    color: white;
+    border-radius: 8px;
+    max-width: 220px;
+  }
+  .msg-recipients-title {
+    font-size: 10px;
+    color: #08230e;
+    cursor: default;
   }
 </style>
