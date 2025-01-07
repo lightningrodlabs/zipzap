@@ -7,7 +7,7 @@
   import Avatar from "./Avatar.svelte";
   import StreamPane from "./StreamPane.svelte";
   import ThingItem from "./ThingItem.svelte";
-  import type { WeaveClient } from "@lightningrodlabs/we-applet";
+  import type { WeaveClient } from "@theweave/api";
   import { decodeHashFromBase64, encodeHashToBase64 } from "@holochain/client";
   import type { AgentPubKey } from "@holochain/client";
   import { EntryRecord, HoloHashMap } from "@holochain-open-dev/utils";

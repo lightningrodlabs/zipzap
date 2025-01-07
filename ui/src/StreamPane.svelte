@@ -4,7 +4,7 @@
   import { get } from "svelte/store";
   import SvgIcon from "./SvgIcon.svelte";
   import Confirm from "./Confirm.svelte";
-  import { isWeContext, type WAL } from "@lightningrodlabs/we-applet";
+  import { isWeaveContext, type WAL } from "@theweave/api";
   import type { ZipZapStore } from "./store";
   import { encodeHashToBase64 } from "@holochain/client";
   import type { Stream, Payload } from "./stream";
@@ -25,7 +25,7 @@
   const walToPocket = () => {
     const nullHash = new Uint8Array(39)
     const attachment: WAL = { hrl: [store.dnaHash, nullHash], context: stream.id }
-    store.weaveClient?.walToPocket(attachment)
+    store.weaveClient?.assets.assetToPocket(attachment)
   }
   const SCROLL_THRESHOLD = 100; // How close to the bottom must the user be to consider it "at the bottom"
 
@@ -117,7 +117,7 @@
       <span>Messages: {$messages.length}</span>
     </div>
     <div style="display:flex; align-items: center">
-      {#if isWeContext()}
+      {#if isWeaveContext()}
         <sl-button
           on:click={()=>walToPocket() }
           style="margin-top: 5px;margin-right: 5px"
@@ -177,21 +177,23 @@
               }}
               >{ackCount}</span>
               <div
-        class="msg-recipients"
         on:mouseleave={() => {
           showRecipients = 0;
         }}
       >
       {#if showRecipients === msg.payload.created}
-        <div class="msg-recipients-title" style="margin-bottom: 2px;">{'received by:'}</div>
-        <div style="display:flex;flex-direction:row; flex-wrap: wrap;">
-          {#each Array.from($acks[msg.payload.created].keys()) as agent}
-              <agent-avatar
-                style="margin-left: 2px; margin-bottom: 2px;"
-                size={18}
-                agent-pub-key={encodeHashToBase64(agent)}
-              ></agent-avatar>,
-          {/each}
+        {@const keys = Array.from($acks[msg.payload.created].keys())}
+        <div class="msg-recipients">
+          <div class="msg-recipients-title" style="margin-bottom: 2px;">{'received by:'}</div>
+          <div style="display:flex;flex-direction:row; flex-wrap: wrap;">
+            {#each keys as agent, i}
+                <agent-avatar
+                  style="margin-left: 2px; margin-bottom: 2px;"
+                  size={18}
+                  agent-pub-key={encodeHashToBase64(agent)}
+                ></agent-avatar>{#if i<keys.length-1},{/if}
+            {/each}
+          </div>
         </div>
       {/if}
       </div>
